@@ -664,105 +664,96 @@
     </div>
 
     <script>
-        const EQUIPO_SEMILLA = [
-            { nombre: "Ana Martínez", rol: "Orientadora Principal", clave: "123" },
-            { nombre: "Carlos Retamal", rol: "Psicólogo Escolar", clave: "123" },
-            { nombre: "María José Ossa", rol: "Directora de Convivencia", clave: "123" }
-        ];
+        const API_BASE = "http://localhost:3001/api";
 
-        const CASOS_SEMILLA = [
-            {
-                id: 101,
-                estudiante: "Joaquín Maino Palma",
-                fechaApertura: "2026-05-10",
-                categoria: "Convivencia Escolar",
-                descripcion: "Discusión verbal recurrente en el patio con compañeros de curso durante el periodo de colación. Afecta el clima de convivencia del aula.",
-                estado: "En seguimiento",
-                responsablePrincipal: "Ana Martínez",
-                bitacora: [
-                    { tipo: "Apertura", fecha: "2026-05-10", operador: "Ana Martínez", contenido: "Apertura formal de folio." },
-                    { tipo: "Medida", fecha: "2026-05-12", operador: "Ana Martínez", contenido: "Firma de compromiso de mediación estudiantil de sana convivencia.", estadoMedida: "Compromiso de Mediación" }
-                ]
-            },
-            {
-                id: 102,
-                estudiante: "Francisca Silva Fuentes",
-                fechaApertura: "2026-06-01",
-                categoria: "Académico / Rendimiento",
-                descripcion: "Baja abrupta de calificaciones en el último trimestre escolar. Se evidencia desmotivación severa.",
-                estado: "Abierto",
-                responsablePrincipal: "Carlos Retamal",
-                bitacora: [
-                    { tipo: "Apertura", fecha: "2026-06-01", operador: "Carlos Retamal", contenido: "Apertura del expediente por alerta del sistema académico de notas." }
-                ]
-            }
-        ];
-
-        let database = [];
-        let equipo = [];
+        let authToken = null;
         let currentUser = null;
         let casoSeleccionadoId = null;
+        let casoActual = null;
+        let equipoCache = [];
         let chartCategoriasObj = null;
         let chartResponsablesObj = null;
         let chartImpactoObj = null;
 
+        async function apiFetch(path, options = {}) {
+            const headers = { ...(options.headers || {}) };
+            if (authToken) headers["Authorization"] = "Bearer " + authToken;
+            if (options.body) headers["Content-Type"] = "application/json";
+
+            const res = await fetch(API_BASE + path, { ...options, headers });
+
+            if (res.status === 401) {
+                cerrarSesion();
+                throw new Error("Sesión inválida o expirada.");
+            }
+            if (!res.ok) {
+                let mensaje = "Error en la solicitud.";
+                try { mensaje = (await res.json()).error || mensaje; } catch (e) {}
+                throw new Error(mensaje);
+            }
+            if (res.status === 204) return null;
+            return res.json();
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
-            if (!localStorage.getItem("sge_equipo")) localStorage.setItem("sge_equipo", JSON.stringify(EQUIPO_SEMILLA));
-            if (!localStorage.getItem("sge_casos")) localStorage.setItem("sge_casos", JSON.stringify(CASOS_SEMILLA));
-
-            equipo = JSON.parse(localStorage.getItem("sge_equipo"));
-            database = JSON.parse(localStorage.getItem("sge_casos"));
-
-            verificarSesionExistente();
+            authToken = localStorage.getItem("sge_token");
+            if (authToken) verificarSesionExistente();
         });
 
-        function procesarLogin(e) {
+        async function procesarLogin(e) {
             e.preventDefault();
             const uName = document.getElementById("auth-user").value.trim();
             const uPass = document.getElementById("auth-pass").value;
             const alertBox = document.getElementById("auth-alert");
             alertBox.classList.add("hidden");
 
-            if(uName.toLowerCase() === 'admin' && uPass === 'admin123') {
-                establecerSesion({ nombre: "Administrador General", rol: "Administrador Maestro", cuenta: "admin" });
-                return;
+            try {
+                const data = await apiFetch("/auth/login", {
+                    method: "POST",
+                    body: JSON.stringify({ usuario: uName, clave: uPass }),
+                });
+                authToken = data.token;
+                localStorage.setItem("sge_token", authToken);
+                await establecerSesion(data.usuario);
+            } catch (err) {
+                alertBox.innerText = "Credenciales incorrectas.";
+                alertBox.classList.remove("hidden");
             }
-            if(uName.toLowerCase() === 'invitado' && uPass === 'invitado123') {
-                establecerSesion({ nombre: "Usuario Invitado", rol: "Visualizador Solo Lectura", cuenta: "invitado" });
-                return;
-            }
-            const match = equipo.find(f => f.nombre.toLowerCase() === uName.toLowerCase() && f.clave === uPass);
-            if(match) {
-                establecerSesion({ nombre: match.nombre, rol: match.rol, cuenta: "funcionario" });
-                return;
-            }
-
-            alertBox.innerText = "Credenciales incorrectas.";
-            alertBox.classList.remove("hidden");
         }
 
-        function establecerSesion(usuarioObj) {
+        async function establecerSesion(usuarioObj) {
             currentUser = usuarioObj;
-            localStorage.setItem("sge_sesion_activa", JSON.stringify(usuarioObj));
             document.getElementById("auth-screen").classList.add("hidden");
-            
+
             document.getElementById("current-user-name").innerText = currentUser.nombre;
             document.getElementById("current-user-role").innerText = currentUser.rol;
             document.getElementById("avatar-sesion").innerText = currentUser.nombre.charAt(0);
 
+            await cargarEquipoCache();
             actualizarSelectoresEquipo();
             evaluarPermisosYRestriccionesDeRoles();
-            
+
             switchView('dashboard');
         }
 
-        function verificarSesionExistente() {
-            const guardada = localStorage.getItem("sge_sesion_activa");
-            if(guardada) establecerSesion(JSON.parse(guardada));
+        async function verificarSesionExistente() {
+            try {
+                const data = await apiFetch("/auth/me");
+                await establecerSesion(data.usuario);
+            } catch (err) {
+                cerrarSesion();
+            }
         }
 
         function cerrarSesion() {
-            localStorage.removeItem("sge_sesion_activa");
+            if (authToken) {
+                fetch(API_BASE + "/auth/logout", {
+                    method: "POST",
+                    headers: { Authorization: "Bearer " + authToken },
+                }).catch(() => {});
+            }
+            localStorage.removeItem("sge_token");
+            authToken = null;
             currentUser = null;
             document.getElementById("auth-screen").classList.remove("hidden");
         }
@@ -770,7 +761,7 @@
         function evaluarPermisosYRestriccionesDeRoles() {
             const formContenedor = document.getElementById("form-contenedor-equipo");
             const bannerBloqueo = document.getElementById("panel-bloqueo-equipo");
-            
+
             if(currentUser.cuenta === 'admin') {
                 formContenedor.classList.remove("opacity-40", "pointer-events-none");
                 bannerBloqueo.classList.add("hidden");
@@ -784,71 +775,46 @@
             else btnGlobalNuevo.classList.remove("hidden");
         }
 
-        function syncStorage() { localStorage.setItem("sge_casos", JSON.stringify(database)); }
-
-        function calcularDiasAbiertos(fechaApertura, fechaCierre = null) {
-            const fin = fechaCierre ? new Date(fechaCierre) : new Date();
-            const inicio = new Date(fechaApertura);
-            return Math.ceil(Math.abs(fin - inicio) / (1000 * 60 * 60 * 24));
+        async function cargarEquipoCache() {
+            equipoCache = await apiFetch("/equipo");
         }
 
-        function actualizarMetricasDashboard() {
+        async function actualizarMetricasDashboard() {
             const fCat = document.getElementById("db-filter-categoria").value;
             const fDesde = document.getElementById("db-filter-desde").value;
+            const params = new URLSearchParams({ categoria: fCat, desde: fDesde || "" });
+            const data = await apiFetch(`/dashboard/metricas?${params}`);
 
-            const filtrados = database.filter(c => {
-                if(fCat !== "Todos" && c.categoria !== fCat) return false;
-                if(fDesde && new Date(c.fechaApertura) < new Date(fDesde)) return false;
-                return true;
-            });
-
-            document.getElementById("kpi-total").innerText = filtrados.length;
-            document.getElementById("kpi-abiertos").innerText = filtrados.filter(c => c.estado === 'Abierto').length;
-            document.getElementById("kpi-seguimiento").innerText = filtrados.filter(c => c.estado === 'En seguimiento').length;
-            document.getElementById("kpi-cerrados").innerText = filtrados.filter(c => c.estado === 'Cerrados' || c.estado === 'Cerrado').length;
+            document.getElementById("kpi-total").innerText = data.kpis.total;
+            document.getElementById("kpi-abiertos").innerText = data.kpis.abiertos;
+            document.getElementById("kpi-seguimiento").innerText = data.kpis.seguimiento;
+            document.getElementById("kpi-cerrados").innerText = data.kpis.cerrados;
 
             const contenedorAlertas = document.getElementById("contenedor-alertas");
             contenedorAlertas.innerHTML = "";
-            let AlertasContadas = 0;
 
-            database.forEach(c => {
-                if(c.estado !== 'Cerrado') {
-                    const fechasHitos = c.bitacora.map(b => new Date(b.fecha));
-                    const ultimaFecha = new Date(Math.max(...fechasHitos));
-                    const diasInactivo = Math.ceil(Math.abs(new Date() - ultimaFecha) / (1000 * 60 * 60 * 24));
-
-                    if(diasInactivo >= 10) {
-                        AlertasContadas++;
-                        contenedorAlertas.innerHTML += `
-                            <div class="alert alert-danger p-2 mb-1 rounded flex justify-between items-center text-xs border-s-4 border-red-600 bg-red-50">
-                                <div>
-                                    <span class="font-bold text-red-900">🚨 ALERTA: Caso #${c.id} (${c.estudiante})</span>
-                                    <p class="text-[11px] text-slate-600 m-0">Lleva ${diasInactivo} días sin bitácora actualizada.</p>
-                                </div>
-                                <button onclick="verDetalleCaso(${c.id})" class="text-xs text-blue-800 underline font-semibold">Revisar Caso</button>
-                            </div>
-                        `;
-                    }
-                }
-            });
-
-            if(AlertasContadas === 0) {
+            if (data.alertas.length === 0) {
                 contenedorAlertas.innerHTML = `<p class="text-xs text-slate-400 italic py-2">No se registran alertas desatendidas.</p>`;
+            } else {
+                data.alertas.forEach(a => {
+                    contenedorAlertas.innerHTML += `
+                        <div class="alert alert-danger p-2 mb-1 rounded flex justify-between items-center text-xs border-s-4 border-red-600 bg-red-50">
+                            <div>
+                                <span class="font-bold text-red-900">🚨 ALERTA: Caso #${a.id} (${a.estudiante})</span>
+                                <p class="text-[11px] text-slate-600 m-0">Lleva ${a.diasInactivo} días sin bitácora actualizada.</p>
+                            </div>
+                            <button onclick="verDetalleCaso(${a.id})" class="text-xs text-blue-800 underline font-semibold">Revisar Caso</button>
+                        </div>
+                    `;
+                });
             }
-
-            const categoriasContador = {};
-            const responsablesContador = {};
-            filtrados.forEach(c => {
-                categoriasContador[c.categoria] = (categoriasContador[c.categoria] || 0) + 1;
-                responsablesContador[c.responsablePrincipal] = (responsablesContador[c.responsablePrincipal] || 0) + 1;
-            });
 
             if (chartCategoriasObj) chartCategoriasObj.destroy();
             chartCategoriasObj = new Chart(document.getElementById('chartCategorias').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(categoriasContador),
-                    datasets: [{ data: Object.values(categoriasContador), backgroundColor: '#3b82f6', borderRadius: 4 }]
+                    labels: data.categorias.labels,
+                    datasets: [{ data: data.categorias.data, backgroundColor: '#3b82f6', borderRadius: 4 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
@@ -857,54 +823,48 @@
             chartResponsablesObj = new Chart(document.getElementById('chartResponsables').getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(responsablesContador),
-                    datasets: [{ data: Object.values(responsablesContador), backgroundColor: ['#1e3a8a', '#0d9488', '#f59e0b'] }]
+                    labels: data.responsables.labels,
+                    datasets: [{ data: data.responsables.data, backgroundColor: ['#1e3a8a', '#0d9488', '#f59e0b'] }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            const casesWithMedida = database.filter(c => c.bitacora.some(b => b.tipo === 'Medida'));
-            const efectivas = casesWithMedida.filter(c => c.estado === 'Cerrado' && c.bitacora.some(b => b.tipo === 'Cierre' && b.motivo === 'Exitosa sin Reincidencia')).length;
-            const noEfectivas = casesWithMedida.length - efectivas;
+            const datosImpacto = data.impacto.casesWithMedida > 0
+                ? [data.impacto.efectivas, data.impacto.noEfectivas]
+                : [1, 0];
 
             if (chartImpactoObj) chartImpactoObj.destroy();
             chartImpactoObj = new Chart(document.getElementById('chartImpacto').getContext('2d'), {
                 type: 'pie',
                 data: {
                     labels: ['Éxito Aplicado', 'En Ejecución / Reincidentes'],
-                    datasets: [{ data: casesWithMedida.length > 0 ? [efectivas, noEfectivas] : [1, 0], backgroundColor: ['#10b981', '#cbd5e1'] }]
+                    datasets: [{ data: datosImpacto, backgroundColor: ['#10b981', '#cbd5e1'] }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
             });
         }
 
-        function renderTablaCasos() {
+        async function renderTablaCasos() {
             const fEstado = document.getElementById("filter-estado").value;
             const fCat = document.getElementById("filter-categoria").value;
             const fResp = document.getElementById("filter-responsable").value;
-            const fSearch = document.getElementById("filter-search").value.toLowerCase();
+            const fSearch = document.getElementById("filter-search").value;
+
+            const params = new URLSearchParams({ estado: fEstado, categoria: fCat, responsable: fResp, search: fSearch });
+            const casos = await apiFetch(`/casos?${params}`);
 
             const tbody = document.getElementById("tabla-casos-body");
             tbody.innerHTML = "";
 
-            const filtered = database.filter(c => {
-                if (fEstado !== 'Todos' && c.estado !== fEstado) return false;
-                if (fCat !== 'Todos' && c.categoria !== fCat) return false;
-                if (fResp !== 'Todos' && c.responsablePrincipal !== fResp) return false;
-                if (fSearch && !c.estudiante.toLowerCase().includes(fSearch)) return false;
-                return true;
-            });
-
-            filtered.forEach(c => {
-                const dias = calcularDiasAbiertos(c.fechaApertura, c.estado === 'Cerrado' ? c.bitacora.find(b=>b.tipo==='Cierre')?.fecha : null);
+            casos.forEach(c => {
                 let badgeColor = c.estado === 'Abierto' ? 'bg-danger' : (c.estado === 'Cerrado' ? 'bg-success' : 'bg-warning text-dark');
-                
+
                 tbody.innerHTML += `
                     <tr>
                         <td class="px-4 py-3"><div class="font-bold text-slate-800">#${c.id}</div><div class="text-xs text-slate-500">${c.estudiante}</div></td>
                         <td class="px-4 py-3 text-xs">${c.categoria}</td>
                         <td class="px-4 py-3 text-xs">${c.fechaApertura}</td>
-                        <td class="px-4 py-3 text-xs font-semibold">${dias} de Permanencia</td>
+                        <td class="px-4 py-3 text-xs font-semibold">${c.diasActivo} de Permanencia</td>
                         <td class="px-4 py-3 text-xs">${c.responsablePrincipal}</td>
                         <td class="px-4 py-3"><span class="badge ${badgeColor} status-badge text-[10px]">${c.estado}</span></td>
                         <td class="px-4 py-3 text-end">
@@ -915,19 +875,25 @@
             });
         }
 
-        function verDetalleCaso(id) {
+        async function verDetalleCaso(id) {
             casoSeleccionadoId = id;
-            const caso = database.find(c => c.id === id);
-            if(!caso) return;
+            try {
+                casoActual = await apiFetch(`/casos/${id}`);
+            } catch (err) {
+                alert(err.message);
+                return;
+            }
+            renderDetalleCasoUI(casoActual);
+            switchView('detalle');
+        }
 
+        function renderDetalleCasoUI(caso) {
             document.getElementById("det-id").innerText = `CASO FOLIO #${caso.id}`;
             document.getElementById("det-estudiante").innerText = caso.estudiante;
             document.getElementById("det-categoria").innerText = caso.categoria;
             document.getElementById("det-descripcion").innerText = caso.descripcion;
             document.getElementById("det-fecha-apertural").innerText = caso.fechaApertura;
-            
-            const dias = calcularDiasAbiertos(caso.fechaApertura, caso.estado === 'Cerrado' ? caso.bitacora.find(b=>b.tipo==='Cierre')?.fecha : null);
-            document.getElementById("det-dias-abierto").innerText = `${dias} Días Activo`;
+            document.getElementById("det-dias-abierto").innerText = `${caso.diasActivo} Días Activo`;
             document.getElementById("det-resp-principal").innerText = caso.responsablePrincipal;
 
             const badge = document.getElementById("det-badge-estado");
@@ -942,7 +908,6 @@
             }
 
             renderBitacora(caso.bitacora);
-            switchView('detalle');
         }
 
         function renderBitacora(bitacora) {
@@ -974,10 +939,9 @@
         }
 
         function generarCitaciónApoderado() {
-            const caso = database.find(c => c.id === casoSeleccionadoId);
-            if(!caso) return;
+            if (!casoActual) return;
 
-            const plantilla = `COLEGIO GABRIELA MISTRAL\nDEPARTAMENTO DE CONVIVENCIA ESCOLAR\n\n Santiago, 2026\n\nREF: CITACIÓN OFICIAL DE APODERADO - FOLIO INTERNO #${caso.id}\n\nEstimado(a) Apoderado(a) de ${caso.estudiante}:\n\nPor medio de la presente, se le cita formalmente a una entrevista presencial de carácter obligatorio...\n\nAtentamente,\nEquipo Multidisciplinario`;
+            const plantilla = `COLEGIO GABRIELA MISTRAL\nDEPARTAMENTO DE CONVIVENCIA ESCOLAR\n\n Santiago, 2026\n\nREF: CITACIÓN OFICIAL DE APODERADO - FOLIO INTERNO #${casoActual.id}\n\nEstimado(a) Apoderado(a) de ${casoActual.estudiante}:\n\nPor medio de la presente, se le cita formalmente a una entrevista presencial de carácter obligatorio...\n\nAtentamente,\nEquipo Multidisciplinario`;
             document.getElementById("txt-citacion-cuerpo").value = plantilla;
             new bootstrap.Modal(document.getElementById('modalCitacion')).show();
         }
@@ -988,26 +952,25 @@
             new bootstrap.Modal(document.getElementById('modalApertura')).show();
         }
 
-        function guardarNuevoCaso(e) {
+        async function guardarNuevoCaso(e) {
             e.preventDefault();
-            const idNuevo = database.length > 0 ? Math.max(...database.map(c => c.id)) + 1 : 101;
 
-            const nuevoCaso = {
-                id: idNuevo,
+            const payload = {
                 estudiante: document.getElementById('in-estudiante').value,
                 fechaApertura: document.getElementById('in-fecha').value,
                 categoria: document.getElementById('in-categoria').value,
+                responsableId: parseInt(document.getElementById('in-responsable').value, 10),
                 descripcion: document.getElementById('in-descripcion').value,
-                estado: "Abierto",
-                responsablePrincipal: document.getElementById('in-responsable').value.split(" (")[0],
-                bitacora: [{ tipo: "Apertura", fecha: document.getElementById('in-fecha').value, operador: currentUser.nombre, contenido: "Apertura de expediente institucional." }]
             };
 
-            database.push(nuevoCaso);
-            syncStorage();
-            document.getElementById('form-apertura').reset();
-            bootstrap.Modal.getInstance(document.getElementById('modalApertura')).hide();
-            switchView('casos');
+            try {
+                await apiFetch("/casos", { method: "POST", body: JSON.stringify(payload) });
+                document.getElementById('form-apertura').reset();
+                bootstrap.Modal.getInstance(document.getElementById('modalApertura')).hide();
+                switchView('casos');
+            } catch (err) {
+                alert(err.message);
+            }
         }
 
         function openModalAccion(tipo) {
@@ -1030,28 +993,28 @@
             new bootstrap.Modal(document.getElementById('modalAccionBitacora')).show();
         }
 
-        function guardarAccionBitacora(e) {
+        async function guardarAccionBitacora(e) {
             e.preventDefault();
-            const caso = database.find(c => c.id === casoSeleccionadoId);
-            if(!caso) return;
 
             const tipo = document.getElementById('in-accion-tipo').value;
-            const entrada = {
-                tipo: tipo === 'entrevista' ? 'Entrevista' : (tipo === 'seguimiento' ? 'Seguimiento' : 'Medida'),
+            const payload = {
+                tipo,
                 fecha: document.getElementById('in-accion-fecha').value,
-                operador: currentUser.nombre,
-                contenido: document.getElementById('in-accion-desc').value
+                contenido: document.getElementById('in-accion-desc').value,
             };
+            if (tipo === 'entrevista') payload.subtipo = document.getElementById('in-entrevista-tipo').value;
+            if (tipo === 'medida') payload.estadoMedida = document.getElementById('in-medida-estado').value;
 
-            if(tipo === 'entrevista') entrada.subtipo = document.getElementById('in-entrevista-tipo').value;
-            if(tipo === 'medida') entrada.estadoMedida = document.getElementById('in-medida-estado').value;
-
-            if(caso.estado === 'Abierto') caso.estado = 'En seguimiento';
-
-            caso.bitacora.push(entrada);
-            syncStorage();
-            bootstrap.Modal.getInstance(document.getElementById('modalAccionBitacora')).hide();
-            verDetalleCaso(caso.id);
+            try {
+                casoActual = await apiFetch(`/casos/${casoSeleccionadoId}/bitacora`, {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                });
+                bootstrap.Modal.getInstance(document.getElementById('modalAccionBitacora')).hide();
+                renderDetalleCasoUI(casoActual);
+            } catch (err) {
+                alert(err.message);
+            }
         }
 
         function openModalCierre() {
@@ -1061,26 +1024,28 @@
             new bootstrap.Modal(document.getElementById('modalCierre')).show();
         }
 
-        function guardarCierreCaso(e) {
+        async function guardarCierreCaso(e) {
             e.preventDefault();
-            const caso = database.find(c => c.id === casoSeleccionadoId);
-            if(!caso) return;
 
-            caso.estado = "Cerrado";
-            caso.bitacora.push({
-                tipo: 'Cierre',
+            const payload = {
                 fecha: document.getElementById('in-cierre-fecha').value,
-                operador: currentUser.nombre,
                 motivo: document.getElementById('in-cierre-motivo').value,
-                contenido: document.getElementById('in-cierre-evaluacion').value
-            });
+                evaluacion: document.getElementById('in-cierre-evaluacion').value,
+            };
 
-            syncStorage();
-            bootstrap.Modal.getInstance(document.getElementById('modalCierre')).hide();
-            verDetalleCaso(caso.id);
+            try {
+                casoActual = await apiFetch(`/casos/${casoSeleccionadoId}/cierre`, {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                });
+                bootstrap.Modal.getInstance(document.getElementById('modalCierre')).hide();
+                renderDetalleCasoUI(casoActual);
+            } catch (err) {
+                alert(err.message);
+            }
         }
 
-        function agregarMiembroEquipo(e) {
+        async function agregarMiembroEquipo(e) {
             e.preventDefault();
             if(currentUser.cuenta !== 'admin') return;
 
@@ -1088,18 +1053,33 @@
             const rol = document.getElementById("eq-rol").value.trim();
             const clave = document.getElementById("eq-password").value;
 
-            equipo.push({ nombre, rol, clave });
-            localStorage.setItem("sge_equipo", JSON.stringify(equipo));
-            document.getElementById("form-equipo").reset();
-            actualizarSelectoresEquipo();
-            renderTablaEquipo();
+            try {
+                await apiFetch("/equipo", { method: "POST", body: JSON.stringify({ nombre, rol, clave }) });
+                document.getElementById("form-equipo").reset();
+                await cargarEquipoCache();
+                actualizarSelectoresEquipo();
+                renderTablaEquipo();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function eliminarMiembroEquipo(id) {
+            try {
+                await apiFetch(`/equipo/${id}`, { method: "DELETE" });
+                await cargarEquipoCache();
+                actualizarSelectoresEquipo();
+                renderTablaEquipo();
+            } catch (err) {
+                alert(err.message);
+            }
         }
 
         function renderTablaEquipo() {
             const tbody = document.getElementById("tabla-equipo-body");
             tbody.innerHTML = "";
-            equipo.forEach((m, index) => {
-                let btnEliminar = currentUser.cuenta === 'admin' ? `<button onclick="equipo.splice(${index},1); localStorage.setItem('sge_equipo', JSON.stringify(equipo)); actualizarSelectoresEquipo(); renderTablaEquipo();" class="text-red-600 text-xs font-bold hover:underline">Remover</button>` : `<span class="text-slate-300 text-xs italic">Protegido</span>`;
+            equipoCache.forEach((m) => {
+                let btnEliminar = currentUser.cuenta === 'admin' ? `<button onclick="eliminarMiembroEquipo(${m.id})" class="text-red-600 text-xs font-bold hover:underline">Remover</button>` : `<span class="text-slate-300 text-xs italic">Protegido</span>`;
                 tbody.innerHTML += `<tr><td class="font-bold text-slate-700">${m.nombre}</td><td class="text-slate-600 text-xs">${m.rol}</td><td class="text-end">${btnEliminar}</td></tr>`;
             });
         }
@@ -1111,9 +1091,9 @@
             const filterResp = document.getElementById("filter-responsable");
             if(filterResp) filterResp.innerHTML = `<option value="Todos">Todos los responsables</option>`;
 
-            equipo.forEach(m => {
+            equipoCache.forEach(m => {
                 selectoresDinamicos.forEach(select => {
-                    select.innerHTML += `<option value="${m.nombre} (${m.rol})">${m.nombre} (${m.rol})</option>`;
+                    select.innerHTML += `<option value="${m.id}">${m.nombre} (${m.rol})</option>`;
                 });
                 if(filterResp) filterResp.innerHTML += `<option value="${m.nombre}">${m.nombre}</option>`;
             });
@@ -1149,15 +1129,24 @@
             }
         }
 
-        function exportarReporteExcel() {
-            let csvContent = "data:text/csv;charset=utf-8,ID,Estudiante,Fecha Apertura,Categoria,Responsable,Estado\n";
-            database.forEach(c => { csvContent += `${c.id},"${c.estudiante}",${c.fechaApertura},"${c.categoria}","${c.responsablePrincipal}",${c.estado}\n`; });
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", `Reporte_Casos.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        async function exportarReporteExcel() {
+            try {
+                const res = await fetch(`${API_BASE}/casos/export.csv`, {
+                    headers: { Authorization: "Bearer " + authToken },
+                });
+                if (!res.ok) throw new Error("No se pudo generar el reporte.");
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "Reporte_Casos.csv";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(err.message);
+            }
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

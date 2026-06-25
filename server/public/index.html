@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGE - Sistema de Seguimiento de Casos Estudiantiles</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+<body class="bg-slate-50">
+
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner-border text-light" role="status"></div>
+    </div>
+    <div id="toast-container"></div>
+
+    <div id="auth-screen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md space-y-4">
+            <div class="text-center space-y-1">
+                <i class="fa-solid fa-graduation-cap text-4xl text-blue-800"></i>
+                <h2 class="text-xl font-bold text-slate-800">Sistema de Gestión de Casos</h2>
+                <p class="text-xs text-slate-400">SGE Multi-colegio - Control de Acceso</p>
+            </div>
+            <div id="auth-alert" class="alert alert-danger p-2 text-xs hidden"></div>
+            <form onsubmit="Auth.procesarLogin(event)" class="space-y-3">
+                <div>
+                    <label class="form-label text-xs font-bold text-slate-600">Ámbito</label>
+                    <select id="auth-ambito" class="form-select form-select-sm" required>
+                        <option value="central">Administración Central</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label text-xs font-bold text-slate-600">Usuario</label>
+                    <input type="text" id="auth-user" class="form-control form-control-sm" required>
+                </div>
+                <div>
+                    <label class="form-label text-xs font-bold text-slate-600">Contraseña</label>
+                    <input type="password" id="auth-pass" class="form-control form-control-sm" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary bg-blue-800 hover:bg-blue-900 border-0 w-full py-2 font-semibold">Ingresar al Sistema</button>
+            </form>
+            <div class="bg-slate-50 p-2.5 rounded text-[11px] text-slate-500 space-y-1">
+                <p class="font-bold border-b pb-0.5 mb-1">Cuentas de Demostración:</p>
+                <p>• <b>Super-admin (Central):</b> superadmin / <span class="font-mono">super123</span></p>
+                <p>• <b>Admin de colegio:</b> admin / <span class="font-mono">admin123</span></p>
+                <p>• <b>Invitado:</b> invitado / <span class="font-mono">invitado123</span></p>
+                <p>• <b>Funcionarios:</b> ana.martinez, carlos.retamal / <span class="font-mono">123</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+        <div id="sidebar" class="sidebar w-64 flex-shrink-0 flex flex-col justify-between p-4 hidden md:flex no-print">
+            <div>
+                <div class="flex items-center space-x-3 mb-8 px-2 text-white">
+                    <i class="fa-solid fa-graduation-cap text-2xl text-blue-400"></i>
+                    <span class="text-lg font-bold tracking-wider">SGE Casos</span>
+                </div>
+                <p id="sidebar-colegio" class="text-[11px] text-slate-400 px-2 mb-4"></p>
+                <nav class="space-y-1">
+                    <button onclick="App.switchView('central')" id="btn-nav-central" class="nav-link-custom hidden w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                        <i class="fa-solid fa-building-columns w-5 text-center"></i>
+                        <span>Panel Central</span>
+                    </button>
+                    <button onclick="App.switchView('dashboard')" id="btn-nav-dashboard" class="nav-link-custom active w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button onclick="App.switchView('casos')" id="btn-nav-casos" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                        <i class="fa-solid fa-folder-open w-5 text-center"></i>
+                        <span>Gestión de Casos</span>
+                    </button>
+                    <button onclick="App.switchView('equipo')" id="btn-nav-equipo" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                        <i class="fa-solid fa-users-gear w-5 text-center"></i>
+                        <span>Gestor de Equipo</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="border-t border-slate-700 pt-4 space-y-2">
+                <button id="btn-volver-central" onclick="Colegios.salirContexto()" class="btn btn-xs btn-outline-info w-full text-[11px] py-1 hidden">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Volver a Central
+                </button>
+                <div class="flex items-center space-x-3 px-2 text-white">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs" id="avatar-sesion">U</div>
+                    <div>
+                        <p class="text-xs font-semibold" id="current-user-name">Cargando...</p>
+                        <p class="text-[10px] text-slate-400" id="current-user-role">Rol</p>
+                    </div>
+                </div>
+                <button onclick="Auth.cerrarSesion()" class="btn btn-xs btn-outline-danger w-full text-[11px] py-1 border-red-800 text-red-400 hover:bg-red-950">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm no-print">
+                <div class="flex items-center space-x-4">
+                    <button onclick="App.toggleMenuMobile()" class="btn btn-sm btn-outline-secondary md:hidden">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h1 class="text-xl font-bold text-slate-800" id="page-title">Dashboard General</h1>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button id="btn-global-nuevo-caso" onclick="Casos.openModalApertura()" class="btn btn-primary bg-blue-800 hover:bg-blue-900 border-0 flex items-center space-x-2 text-sm shadow-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Nuevo Caso</span>
+                    </button>
+                </div>
+            </header>
+
+            <main id="view-central" class="p-6 space-y-6 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-fit">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-building-circle-arrow-right text-blue-600 me-2"></i>Crear Colegio</h4>
+                        <form id="form-colegio" onsubmit="Colegios.crearColegio(event)" class="space-y-3">
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Nombre *</label>
+                                <input type="text" id="col-nombre" class="form-control form-control-sm" required>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Comuna</label>
+                                <input type="text" id="col-comuna" class="form-control form-control-sm">
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Dirección</label>
+                                <input type="text" id="col-direccion" class="form-control form-control-sm">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary bg-blue-800 border-0 w-full mt-2">Crear Colegio</button>
+                        </form>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-list text-slate-500 me-2"></i>Colegios Registrados</h4>
+                        <div class="table-responsive">
+                            <table class="table align-middle text-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Colegio</th><th>Comuna</th><th>Estado</th><th>Usuarios</th><th>Casos</th><th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-colegios-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <main id="view-dashboard" class="p-6 space-y-6 hidden">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex items-center space-x-2 text-slate-700 font-bold text-sm">
+                        <i class="fa-solid fa-filter text-blue-600"></i>
+                        <span>Filtros Globales de Análisis</span>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <div>
+                            <select id="db-filter-categoria" onchange="Dashboard.actualizarMetricasDashboard()" class="form-select form-select-sm text-xs border-slate-200">
+                                <option value="Todos">Todas las Categorías</option>
+                                <option value="Convivencia Escolar">Convivencia Escolar</option>
+                                <option value="Académico / Rendimiento">Académico / Rendimiento</option>
+                                <option value="Asistencia / Deserción">Asistencia / Deserción</option>
+                                <option value="Salud Mental / Emocional">Salud Mental / Emocional</option>
+                                <option value="Vulneración de Derechos">Vulneración de Derechos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="date" id="db-filter-desde" onchange="Dashboard.actualizarMetricasDashboard()" class="form-control form-control-sm text-xs border-slate-200" title="Fecha Desde">
+                        </div>
+                        <button onclick="Dashboard.enviarResumenAlertas()" class="btn btn-outline-primary btn-sm border-blue-600 text-blue-700">
+                            <i class="fa-solid fa-envelope me-1"></i> Enviar Resumen por Email
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Casos</p>
+                            <h3 class="text-2xl font-bold text-slate-800 mt-1" id="kpi-total">0</h3>
+                        </div>
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg"><i class="fa-solid fa-boxes-stacked text-xl"></i></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Abiertos</p>
+                            <h3 class="text-2xl font-bold text-red-600 mt-1" id="kpi-abiertos">0</h3>
+                        </div>
+                        <div class="p-3 bg-red-50 text-red-600 rounded-lg"><i class="fa-solid fa-folder-open text-xl"></i></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">En Seguimiento</p>
+                            <h3 class="text-2xl font-bold text-amber-500 mt-1" id="kpi-seguimiento">0</h3>
+                        </div>
+                        <div class="p-3 bg-amber-50 text-amber-500 rounded-lg"><i class="fa-solid fa-spinner text-xl"></i></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cerrados</p>
+                            <h3 class="text-2xl font-bold text-green-600 mt-1" id="kpi-cerrados">0</h3>
+                        </div>
+                        <div class="p-3 bg-green-50 text-green-600 rounded-lg"><i class="fa-solid fa-folder-closed text-xl"></i></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-red-100 bg-gradient-to-r from-white to-red-50/20">
+                    <h4 class="text-sm font-bold text-red-800 flex items-center mb-3">
+                        <i class="fa-solid fa-triangle-exclamation text-red-500 me-2"></i>
+                        <span>Panel de Alertas Críticas y Alertas Tempranas (Convivencia Escolar)</span>
+                    </h4>
+                    <div id="contenedor-alertas" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Categorías</h4>
+                        <div class="h-56"><canvas id="chartCategorias"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Responsables</h4>
+                        <div class="h-56"><canvas id="chartResponsables"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Efectividad de Medidas</h4>
+                        <p class="text-[11px] text-slate-400 mb-3">Tasa de no reincidencia tras compromisos aplicados</p>
+                        <div class="h-48"><canvas id="chartImpacto"></canvas></div>
+                    </div>
+                </div>
+            </main>
+
+            <main id="view-casos" class="p-6 space-y-6 hidden">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-500">Filtrar por Estado</label>
+                            <select id="filter-estado" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200">
+                                <option value="Todos">Todos los estados</option>
+                                <option value="Abierto">Abierto</option>
+                                <option value="En seguimiento">En seguimiento</option>
+                                <option value="Cerrado">Cerrado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-500">Categoría</label>
+                            <select id="filter-categoria" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200">
+                                <option value="Todos">Todas las categorías</option>
+                                <option value="Convivencia Escolar">Convivencia Escolar</option>
+                                <option value="Académico / Rendimiento">Académico / Rendimiento</option>
+                                <option value="Asistencia / Deserción">Asistencia / Deserción</option>
+                                <option value="Salud Mental / Emocional">Salud Mental / Emocional</option>
+                                <option value="Vulneración de Derechos">Vulneración de Derechos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-500">Responsable Principal</label>
+                            <select id="filter-responsable" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200"></select>
+                        </div>
+                        <div class="flex items-end space-x-2">
+                            <div class="w-full">
+                                <label class="form-label text-xs font-semibold text-slate-500">Buscar Estudiante</label>
+                                <input type="text" id="filter-search" oninput="Casos.renderTablaCasos()" placeholder="Nombre..." class="form-control form-control-sm border-slate-200">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-sm">
+                            <thead class="table-light bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="border-0 px-4 py-3">Folio / Estudiante</th>
+                                    <th class="border-0 px-4 py-3">Categoría</th>
+                                    <th class="border-0 px-4 py-3">Apertura</th>
+                                    <th class="border-0 px-4 py-3">Días Activo</th>
+                                    <th class="border-0 px-4 py-3">Responsable Principal</th>
+                                    <th class="border-0 px-4 py-3">Prioridad / Estado</th>
+                                    <th class="border-0 px-4 py-3 text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-casos-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <main id="view-equipo" class="p-6 space-y-6 hidden">
+                <div id="panel-bloqueo-equipo" class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-xs text-amber-800 flex items-center space-x-2 hidden">
+                    <i class="fa-solid fa-lock text-base text-amber-600"></i>
+                    <span><b>Sección Restringida:</b> Sólo un administrador del colegio posee facultades de escritura para habilitar o remover funcionarios autorizados del sistema.</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div id="form-contenedor-equipo" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-fit">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-user-plus text-blue-600 me-2"></i>Agregar Integrante</h4>
+                        <form id="form-equipo" onsubmit="Equipo.agregarMiembroEquipo(event)" class="space-y-3">
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Nombre Completo *</label>
+                                <input type="text" id="eq-nombre" class="form-control form-control-sm" required>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Rol Institucional *</label>
+                                <input type="text" id="eq-rol" class="form-control form-control-sm" required placeholder="Ej. Psicólogo Escolar">
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Contraseña Personal de Firma *</label>
+                                <input type="password" id="eq-password" class="form-control form-control-sm" required placeholder="Clave de operaciones">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary bg-blue-800 border-0 w-full mt-2">Habilitar Funcionario</button>
+                        </form>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-users text-slate-500 me-2"></i>Nómina del Equipo Autorizado</h4>
+                        <div class="table-responsive">
+                            <table class="table align-middle text-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Funcionario</th>
+                                        <th>Especialidad / Rol</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-equipo-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <main id="view-detalle" class="p-6 space-y-6 hidden">
+                <div class="flex justify-between items-center no-print">
+                    <button onclick="App.switchView('casos')" class="btn btn-sm btn-outline-secondary border-slate-200 text-slate-600">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Volver a la lista
+                    </button>
+                    <div class="flex space-x-2">
+                        <button id="btn-det-citacion" onclick="Casos.generarCitacionApoderado()" class="btn btn-sm btn-outline-primary border-blue-600 text-blue-700 hover:bg-blue-50 flex items-center space-x-1">
+                            <i class="fa-solid fa-envelope-open-text"></i>
+                            <span>Generar Citación Apoderado</span>
+                        </button>
+                        <a id="btn-det-pdf" href="#" target="_blank" class="btn btn-sm btn-outline-dark flex items-center space-x-2">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Descargar PDF</span>
+                        </a>
+                        <button onclick="window.print()" class="btn btn-sm btn-dark bg-slate-800 border-0 flex items-center space-x-2">
+                            <i class="fa-solid fa-print"></i>
+                            <span>Imprimir Resumen Certificado</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div id="ficha-resumen-caso" class="lg:col-span-1 space-y-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="text-xs font-mono text-slate-400" id="det-id">CASO FOLIO #000</span>
+                                    <h3 class="text-lg font-bold text-slate-900 mt-1" id="det-estudiante">-</h3>
+                                </div>
+                                <span id="det-badge-estado" class="badge status-badge bg-warning text-dark text-xs">Estado</span>
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Categoría del Problema</label>
+                                <p class="text-xs font-medium text-slate-700 mt-1" id="det-categoria">-</p>
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Hechos Denunciados / Descripción</label>
+                                <p class="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-200 mt-1 leading-relaxed" id="det-descripcion">-</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Apertura</label>
+                                    <p class="text-xs font-medium text-slate-700 mt-1" id="det-fecha-apertural">-</p>
+                                </div>
+                                <div>
+                                    <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Permanencia</label>
+                                    <p class="text-xs font-medium text-slate-700 mt-1" id="det-dias-abierto">-</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase mb-1 block">Responsable Asignado</label>
+                                <div class="p-2 bg-blue-50/50 rounded text-xs font-semibold text-blue-900" id="det-resp-principal">-</div>
+                            </div>
+                        </div>
+
+                        <div id="panel-operacional-acciones" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-2 no-print">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Acciones Rápidas</h4>
+                            <button onclick="Bitacora.openModalAccion('entrevista')" class="btn btn-sm btn-outline-primary w-full text-left flex items-center justify-between py-2 text-xs">
+                                <span><i class="fa-solid fa-comments me-2 text-blue-500"></i> Registrar Entrevista</span>
+                            </button>
+                            <button onclick="Bitacora.openModalAccion('seguimiento')" class="btn btn-sm btn-outline-primary w-full text-left flex items-center justify-between py-2 text-xs">
+                                <span><i class="fa-solid fa-magnifying-glass-chart me-2 text-amber-500"></i> Bitácora de Seguimiento</span>
+                            </button>
+                            <button onclick="Bitacora.openModalAccion('medida')" class="btn btn-sm btn-outline-primary w-full text-left flex items-center justify-between py-2 text-xs">
+                                <span><i class="fa-solid fa-gavel me-2 text-purple-500"></i> Aplicar Medida Reparatoria</span>
+                            </button>
+                            <button id="btn-accion-cerrar" onclick="Casos.openModalCierre()" class="btn btn-sm btn-danger w-full py-2 mt-4 bg-red-600 border-0 text-xs font-semibold">
+                                Cierre de Expediente
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="seccion-bitacora-reporte" class="lg:col-span-2">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
+                            <h4 class="text-sm font-bold text-slate-800 pb-2 border-b flex items-center">
+                                <i class="fa-solid fa-clock-rotate-left text-slate-400 me-2 no-print"></i>
+                                <span>Cuerpo de Bitácora Cronológica Oficial</span>
+                            </h4>
+                            <div id="timeline-container" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCitacion" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-blue-900 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold"><i class="fa-solid fa-paper-plane me-2"></i> Documento Oficial de Citación</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 space-y-3">
+                    <textarea id="txt-citacion-cuerpo" class="form-control font-mono text-xs bg-slate-50" rows="10" readonly></textarea>
+                </div>
+                <div class="modal-footer py-2">
+                    <button onclick="navigator.clipboard.writeText(document.getElementById('txt-citacion-cuerpo').value); App.mostrarToast('Copiado al portapapeles', 'success');" class="btn btn-sm btn-primary bg-blue-800 border-0">Copiar Texto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalApertura" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-slate-900 text-white py-3">
+                    <h5 class="modal-title text-base font-bold">Apertura de Nuevo Caso</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-apertura" onsubmit="Casos.guardarNuevoCaso(event)">
+                    <div class="modal-body p-4 space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="form-label text-xs font-bold text-slate-600">Estudiante Involucrado *</label>
+                                <input type="text" class="form-control form-control-sm" id="in-estudiante" required>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-bold text-slate-600">Fecha de Apertura *</label>
+                                <input type="date" class="form-control form-control-sm" id="in-fecha" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="form-label text-xs font-bold text-slate-600">Categoría del Caso *</label>
+                                <select class="form-select form-select-sm" id="in-categoria" required>
+                                    <option value="Convivencia Escolar">Convivencia Escolar</option>
+                                    <option value="Académico / Rendimiento">Académico / Rendimiento</option>
+                                    <option value="Asistencia / Deserción">Asistencia / Deserción</option>
+                                    <option value="Salud Mental / Emocional">Salud Mental / Emocional</option>
+                                    <option value="Vulneración de Derechos">Vulneración de Derechos</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-bold text-slate-600">Responsable Principal *</label>
+                                <select class="form-select form-select-sm selector-dinamico-equipo" id="in-responsable" required></select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600">Descripción Inicial del Caso *</label>
+                            <textarea class="form-control form-control-sm" id="in-descripcion" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-primary bg-blue-800 border-0">Aperturar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalAccionBitacora" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header text-white py-3" id="modal-accion-header">
+                    <h5 class="modal-title text-sm font-bold" id="modal-accion-titulo">Registrar Entrada</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-accion-bitacora" onsubmit="Bitacora.guardarAccionBitacora(event)">
+                    <input type="hidden" id="in-accion-tipo">
+                    <div class="modal-body p-4 space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="form-label text-xs font-bold text-slate-600">Fecha de Ejecución *</label>
+                                <input type="date" class="form-control form-control-sm" id="in-accion-fecha" required>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-bold text-slate-600">Operador Logueado Firma *</label>
+                                <input type="text" id="in-accion-operador-label" class="form-control form-control-sm bg-slate-100" readonly>
+                            </div>
+                        </div>
+                        <div id="campos-entrevista" class="hidden">
+                            <label class="form-label text-xs font-bold text-slate-600">Tipo de Entrevistado *</label>
+                            <select class="form-select form-select-sm" id="in-entrevista-tipo">
+                                <option value="Estudiante">Estudiante Involucrado</option>
+                                <option value="Apoderado / Tutor">Apoderado / Tutor Legal</option>
+                            </select>
+                        </div>
+                        <div id="campos-medida" class="hidden">
+                            <label class="form-label text-xs font-bold text-slate-600">Tipo / Estado de Medida Aplicada *</label>
+                            <select class="form-select form-select-sm" id="in-medida-estado">
+                                <option value="Compromiso de Mediación">Compromiso de Mediación Estudiantil</option>
+                                <option value="Derivación Psicológica">Derivación Psicológica Interna</option>
+                                <option value="Plan Reparatorio">Plan Reparatorio Conductual Completo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600" id="lbl-accion-descripcion">Observaciones *</label>
+                            <textarea class="form-control form-control-sm" id="in-accion-desc" rows="4" required></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600">Adjuntar archivo (opcional)</label>
+                            <input type="file" class="form-control form-control-sm" id="in-accion-adjunto">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-sm btn-primary bg-slate-800 border-0">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCierre" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-red-700 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold">Cierre de Expediente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-cierre-caso" onsubmit="Casos.guardarCierreCaso(event)">
+                    <div class="modal-body p-4 space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="form-label text-xs font-bold text-slate-600">Fecha de Cierre *</label>
+                                <input type="date" class="form-control form-control-sm" id="in-cierre-fecha" required>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-bold text-slate-600">Autorizador Logueado *</label>
+                                <input type="text" id="in-cierre-operador-label" class="form-control form-control-sm bg-slate-100" readonly>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600">Resolución Final *</label>
+                            <select class="form-select form-select-sm" id="in-cierre-motivo" required>
+                                <option value="Exitosa sin Reincidencia">Resolución Exitosa (Cumplimiento sin Reincidencias)</option>
+                                <option value="Derivado Externo">Derivación Externa Efectiva</option>
+                                <option value="Cierre por Deserción">Cierre Técnico por Retiro / Deserción</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600">Evaluación Final del Caso *</label>
+                            <textarea class="form-control form-control-sm" id="in-cierre-evaluacion" rows="4" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-danger bg-red-700 border-0">Cerrar Caso</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/chartjs/chart.umd.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/colegios.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/casos.js"></script>
+    <script src="/js/bitacora.js"></script>
+    <script src="/js/equipo.js"></script>
+</body>
+</html>
