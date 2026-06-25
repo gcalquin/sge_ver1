@@ -1,0 +1,11 @@
+{
+    "name": "SGE - Sistema de Gestión de Casos Estudiantiles",
+    "short_name": "SGE Casos",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#1e3a8a",
+    "icons": [
+        { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    ]
+}

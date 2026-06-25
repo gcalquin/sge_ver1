@@ -52,7 +52,7 @@ async function main() {
     assert(r.status === 200, "Superadmin entra al contexto de Gabriela Mistral");
 
     r = await req("/casos");
-    assert(r.data.length === 2, "Gabriela Mistral tiene los 2 casos semilla");
+    assert(r.data.length === 5, "Gabriela Mistral tiene los 5 casos semilla (uno por categoría)");
 
     await req("/auth/contexto/salir", { method: "POST" });
     await req("/auth/logout", { method: "POST" });
@@ -68,7 +68,7 @@ async function main() {
     csrfToken = r.data.csrfToken;
 
     r = await req("/casos");
-    assert(r.data.length === 2, "Admin de Gabriela Mistral ve sus 2 casos");
+    assert(r.data.length === 5, "Admin de Gabriela Mistral ve sus 5 casos");
 
     await req("/auth/logout", { method: "POST" });
 
@@ -83,7 +83,7 @@ async function main() {
     csrfToken = r.data.csrfToken;
 
     r = await req("/casos");
-    assert(r.data.length === 1, "Admin de San Ignacio ve solo su 1 caso (aislamiento entre colegios)");
+    assert(r.data.length === 5, "Admin de San Ignacio ve sus 5 casos (aislamiento entre colegios)");
 
     await req("/auth/logout", { method: "POST" });
 

@@ -27,10 +27,10 @@ const App = (() => {
     }
 
     function switchView(viewName) {
-        ["central", "dashboard", "casos", "equipo", "detalle"].forEach((v) => {
+        ["central", "dashboard", "casos", "equipo", "config", "detalle"].forEach((v) => {
             document.getElementById(`view-${v}`).classList.add("hidden");
         });
-        ["central", "dashboard", "casos", "equipo"].forEach((v) => {
+        ["central", "dashboard", "casos", "equipo", "config"].forEach((v) => {
             const btn = document.getElementById(`btn-nav-${v}`);
             if (btn) btn.classList.remove("active");
         });
@@ -56,6 +56,12 @@ const App = (() => {
             document.getElementById("btn-nav-equipo").classList.add("active");
             document.getElementById("page-title").innerText = "Configuración de Personal";
             Equipo.renderTablaEquipo();
+            Equipo.renderProfesoresJefe();
+        } else if (viewName === "config") {
+            document.getElementById("view-config").classList.remove("hidden");
+            document.getElementById("btn-nav-config").classList.add("active");
+            document.getElementById("page-title").innerText = "Configuración del Colegio";
+            Config.renderVistaConfig();
         } else if (viewName === "detalle") {
             document.getElementById("view-detalle").classList.remove("hidden");
             document.getElementById("page-title").innerText = "Expediente Técnico";

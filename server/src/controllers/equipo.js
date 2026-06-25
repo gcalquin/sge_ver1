@@ -5,7 +5,7 @@ const { slugify } = require("../utils/slugify");
 
 const listar = asyncHandler(async (req, res) => {
     const { rows } = await pool.query(
-        `SELECT id, nombre, rol_institucional AS "rolInstitucional", rol AS "rolPermiso"
+        `SELECT id, nombre, rol_institucional AS "rolInstitucional", rol AS "rolPermiso", especialidad, email
          FROM usuarios
          WHERE colegio_id = $1 AND activo = TRUE
          ORDER BY id`,
@@ -15,7 +15,7 @@ const listar = asyncHandler(async (req, res) => {
 });
 
 const crear = asyncHandler(async (req, res) => {
-    const { nombre, rol, rolPermiso, clave } = req.body;
+    const { nombre, rol, rolPermiso, especialidad, email, clave } = req.body;
 
     const base = slugify(nombre);
     let username = base;
@@ -32,10 +32,10 @@ const crear = asyncHandler(async (req, res) => {
 
     const hash = await bcrypt.hash(clave, 10);
     const { rows } = await pool.query(
-        `INSERT INTO usuarios (colegio_id, username, nombre, rol_institucional, password_hash, rol)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, nombre, rol_institucional AS "rolInstitucional", rol AS "rolPermiso"`,
-        [req.colegioId, username, nombre.trim(), rol.trim(), hash, rolPermiso]
+        `INSERT INTO usuarios (colegio_id, username, nombre, rol_institucional, password_hash, rol, especialidad, email)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id, nombre, rol_institucional AS "rolInstitucional", rol AS "rolPermiso", especialidad, email`,
+        [req.colegioId, username, nombre.trim(), rol.trim(), hash, rolPermiso, especialidad || null, email || null]
     );
 
     res.status(201).json(rows[0]);

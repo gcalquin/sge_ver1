@@ -3,6 +3,11 @@ const { asyncHandler } = require("../utils/asyncHandler");
 const { enviarCorreo } = require("../config/mailer");
 
 const enviarAlertas = asyncHandler(async (req, res) => {
+    const { rows: colegioRows } = await pool.query("SELECT dias_alerta_critico FROM colegios WHERE id = $1", [
+        req.colegioId,
+    ]);
+    const diasAlertaCritico = colegioRows[0]?.dias_alerta_critico ?? 10;
+
     const { rows: casos } = await pool.query(
         `SELECT id, folio, estudiante FROM v_casos WHERE colegio_id = $1 AND estado != 'Cerrado'`,
         [req.colegioId]
@@ -28,7 +33,7 @@ const enviarAlertas = asyncHandler(async (req, res) => {
             const diasInactivo = ultima ? Math.ceil(Math.abs(ahora - new Date(ultima)) / (1000 * 60 * 60 * 24)) : null;
             return { ...c, diasInactivo };
         })
-        .filter((c) => c.diasInactivo !== null && c.diasInactivo >= 10);
+        .filter((c) => c.diasInactivo !== null && c.diasInactivo >= diasAlertaCritico);
 
     const destinatario = req.body?.destinatario || process.env.SMTP_FROM || "alertas@colegio.local";
     const texto = alertas.length

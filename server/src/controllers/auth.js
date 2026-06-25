@@ -9,6 +9,7 @@ function usuarioSesion(fila) {
         nombre: fila.nombre,
         rol: fila.rol,
         rolInstitucional: fila.rol_institucional,
+        especialidad: fila.especialidad,
         colegioId: fila.colegio_id,
     };
 }

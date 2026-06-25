@@ -8,6 +8,10 @@ const colegiosRoutes = require("./colegios");
 const casosRoutes = require("./casos");
 const equipoRoutes = require("./equipo");
 const notificacionesRoutes = require("./notificaciones");
+const sostenedoresRoutes = require("./sostenedores");
+const protocolosRoutes = require("./protocolos");
+const reportesRoutes = require("./reportes");
+const cursosProfesorJefeRoutes = require("./cursosProfesorJefe");
 
 const router = express.Router();
 
@@ -30,5 +34,9 @@ router.use("/colegios", colegiosRoutes);
 router.use("/casos", casosRoutes);
 router.use("/equipo", equipoRoutes);
 router.use("/notificaciones", notificacionesRoutes);
+router.use("/sostenedores", sostenedoresRoutes);
+router.use("/protocolos", protocolosRoutes);
+router.use("/reportes", reportesRoutes);
+router.use("/cursos-profesor-jefe", cursosProfesorJefeRoutes);
 
 module.exports = router;

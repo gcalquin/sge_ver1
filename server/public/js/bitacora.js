@@ -82,6 +82,9 @@ const Bitacora = (() => {
 
         document.getElementById("campos-entrevista").classList.add("hidden");
         document.getElementById("campos-medida").classList.add("hidden");
+        document.getElementById("in-consentimiento").checked = true;
+        document.getElementById("campo-justificacion-consentimiento").classList.add("hidden");
+        document.getElementById("in-justificacion-consentimiento").value = "";
 
         if (tipo === "entrevista") {
             document.getElementById("modal-accion-titulo").innerText = "Registrar Acta de Entrevista";
@@ -101,8 +104,16 @@ const Bitacora = (() => {
             fecha: document.getElementById("in-accion-fecha").value,
             contenido: document.getElementById("in-accion-desc").value,
         };
-        if (tipo === "entrevista") payload.subtipo = document.getElementById("in-entrevista-tipo").value;
+        if (tipo === "entrevista") {
+            payload.subtipo = document.getElementById("in-entrevista-tipo").value;
+            payload.consentimientoApoderado = document.getElementById("in-consentimiento").checked;
+            if (!payload.consentimientoApoderado) {
+                payload.justificacionSinConsentimiento = document.getElementById("in-justificacion-consentimiento").value;
+            }
+        }
         if (tipo === "medida") payload.estadoMedida = document.getElementById("in-medida-estado").value;
+
+        const archivo = document.getElementById("in-accion-adjunto").files[0];
 
         try {
             let caso = await Api.apiFetch(`/casos/${App.estado.casoSeleccionadoId}/bitacora`, {
@@ -110,7 +121,6 @@ const Bitacora = (() => {
                 body: JSON.stringify(payload),
             });
 
-            const archivo = document.getElementById("in-accion-adjunto").files[0];
             if (archivo) {
                 const nuevaEntrada = caso.bitacora[caso.bitacora.length - 1];
                 const formData = new FormData();
@@ -123,6 +133,14 @@ const Bitacora = (() => {
             bootstrap.Modal.getInstance(document.getElementById("modalAccionBitacora")).hide();
             Casos.renderDetalleCasoUI(caso);
         } catch (err) {
+            // Sin conexión real (no un error HTTP del servidor) y sin adjunto: se encola
+            // localmente y se reintenta automáticamente cuando el navegador reconecte.
+            if (err instanceof TypeError && !archivo) {
+                Offline.encolar({ path: `/casos/${App.estado.casoSeleccionadoId}/bitacora`, method: "POST", body: payload });
+                bootstrap.Modal.getInstance(document.getElementById("modalAccionBitacora")).hide();
+                App.mostrarToast("Sin conexión: la entrada se guardó en este dispositivo y se enviará al reconectar.", "info");
+                return;
+            }
             App.mostrarToast(err.message, "danger");
         }
     }

@@ -72,19 +72,30 @@ const Auth = (() => {
         document.getElementById("btn-nav-central").classList.toggle("hidden", !(esSuperadmin && !enColegio));
         document.getElementById("btn-volver-central").classList.toggle("hidden", !(esSuperadmin && enColegio));
 
-        ["btn-nav-dashboard", "btn-nav-casos", "btn-nav-equipo"].forEach((id) => {
+        ["btn-nav-dashboard", "btn-nav-casos", "btn-nav-equipo", "btn-nav-config"].forEach((id) => {
             document.getElementById(id).classList.toggle("hidden", esSuperadmin && !enColegio);
         });
 
+        const puedeGestionarEquipo = usuario.rol === "admin" || (esSuperadmin && enColegio);
+
         const formContenedor = document.getElementById("form-contenedor-equipo");
         const bannerBloqueo = document.getElementById("panel-bloqueo-equipo");
-        const puedeGestionarEquipo = usuario.rol === "admin" || (esSuperadmin && enColegio);
         if (puedeGestionarEquipo) {
             formContenedor.classList.remove("opacity-40", "pointer-events-none");
             bannerBloqueo.classList.add("hidden");
         } else {
             formContenedor.classList.add("opacity-40", "pointer-events-none");
             bannerBloqueo.classList.remove("hidden");
+        }
+
+        const formContenedorConfig = document.getElementById("form-contenedor-config");
+        const bannerBloqueoConfig = document.getElementById("panel-bloqueo-config");
+        if (puedeGestionarEquipo) {
+            formContenedorConfig.classList.remove("opacity-40", "pointer-events-none");
+            bannerBloqueoConfig.classList.add("hidden");
+        } else {
+            formContenedorConfig.classList.add("opacity-40", "pointer-events-none");
+            bannerBloqueoConfig.classList.remove("hidden");
         }
 
         const btnGlobalNuevo = document.getElementById("btn-global-nuevo-caso");

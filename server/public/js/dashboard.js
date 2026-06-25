@@ -14,6 +14,37 @@ const Dashboard = (() => {
         document.getElementById("kpi-seguimiento").innerText = data.kpis.seguimiento;
         document.getElementById("kpi-cerrados").innerText = data.kpis.cerrados;
 
+        document.getElementById("lbl-dias-alerta-critico").innerText = data.diasAlertaCritico;
+        document.getElementById("btn-export-superintendencia").href = `${Api.API_BASE}/reportes/superintendencia.csv`;
+        document.getElementById("btn-export-anonimo").href = `${Api.API_BASE}/casos/export-anonimo.csv`;
+
+        const contenedorVencimientos = document.getElementById("contenedor-vencimientos");
+        contenedorVencimientos.innerHTML = data.proximosVencimientos.length
+            ? data.proximosVencimientos
+                  .map(
+                      (v) =>
+                          `<div class="flex justify-between items-center bg-amber-50 px-2 py-1 rounded">
+                              <span>${v.folio} (${v.estudiante}) — ${v.descripcion}</span>
+                              <button onclick="Casos.verDetalleCaso(${v.casoId})" class="text-blue-700 underline ms-2 shrink-0">Ver</button>
+                          </div>`
+                  )
+                  .join("")
+            : '<p class="text-slate-400 italic">Sin vencimientos próximos.</p>';
+
+        const contenedorPme = document.getElementById("contenedor-pme");
+        contenedorPme.innerHTML = data.pmeCruce.length
+            ? data.pmeCruce
+                  .map((m) => {
+                      const cumple = m.valorActual !== null && Number(m.valorActual) >= Number(m.metaValor);
+                      const valorTexto = m.valorActual === null ? "sin datos" : m.valorActual;
+                      return `<div class="border-b border-slate-100 pb-1">
+                          <div class="flex justify-between"><b>${m.indicador}</b><span class="${cumple ? "text-green-600" : "text-red-600"} font-bold">${valorTexto} / meta ${m.metaValor}</span></div>
+                          ${m.descripcion ? `<div class="text-slate-400">${m.descripcion}</div>` : ""}
+                      </div>`;
+                  })
+                  .join("")
+            : '<p class="text-slate-400 italic">Sin metas PME configuradas (ver Configuración).</p>';
+
         const contenedorAlertas = document.getElementById("contenedor-alertas");
         contenedorAlertas.innerHTML = "";
 
