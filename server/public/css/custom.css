@@ -171,4 +171,33 @@ body {
     .shadow-sm, .shadow-2xs, .shadow-xl, .shadow-md {
         box-shadow: none !important;
     }
+
+    #lista-pasos-protocolo input[type="checkbox"] {
+        display: none !important;
+    }
+
+    #banner-denuncia-obligatoria:not(.hidden) {
+        display: block !important;
+        background-color: #b91c1c !important;
+        color: #ffffff !important;
+        border: 1px solid #7f1d1d !important;
+        padding: 0.5rem !important;
+        margin-bottom: 1rem !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    #print-header-caso {
+        display: block !important;
+        border-bottom: 2px dashed #cbd5e1 !important;
+        padding-bottom: 0.75rem !important;
+    }
+
+    #view-detalle .grid > div {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        margin-bottom: 1rem !important;
+    }
 }

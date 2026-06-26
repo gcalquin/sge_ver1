@@ -470,6 +470,10 @@
             </main>
 
             <main id="view-detalle" class="p-6 space-y-6 hidden">
+                <div id="print-header-caso" class="hidden text-center mb-4">
+                    <h2 class="text-base font-bold text-slate-800" id="print-header-colegio">-</h2>
+                    <p class="text-xs text-slate-500" id="print-header-fecha"></p>
+                </div>
                 <div class="flex justify-between items-center no-print">
                     <button onclick="App.switchView('casos')" class="btn btn-sm btn-outline-secondary border-slate-200 text-slate-600">
                         <i class="fa-solid fa-arrow-left me-1"></i> Volver a la lista
@@ -576,16 +580,16 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-list-check text-blue-600 me-2"></i>Protocolo de Actuación</h4>
+                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-list-check text-blue-600 me-2 no-print"></i>Protocolo de Actuación</h4>
                         <p class="text-[11px] text-slate-400 mb-2" id="det-protocolo-normativa"></p>
                         <div id="lista-pasos-protocolo" class="space-y-1 text-xs"></div>
                     </div>
 
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-people-arrows text-amber-600 me-2"></i>Derivaciones Externas</h4>
-                        <form id="form-derivacion" onsubmit="Casos.crearDerivacion(event)" class="grid grid-cols-2 gap-2 mb-3">
+                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-people-arrows text-amber-600 me-2 no-print"></i>Derivaciones Externas</h4>
+                        <form id="form-derivacion" onsubmit="Casos.crearDerivacion(event)" class="grid grid-cols-2 gap-2 mb-3 no-print">
                             <select id="der-institucion" class="form-select form-select-sm">
                                 <option>Carabineros</option>
                                 <option>PDI</option>
@@ -610,8 +614,8 @@
                     </div>
 
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-signature text-teal-600 me-2"></i>Firmas Electrónicas Simples</h4>
-                        <form id="form-firma" onsubmit="Casos.crearFirma(event)" class="grid grid-cols-2 gap-2 mb-3">
+                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-signature text-teal-600 me-2 no-print"></i>Firmas Electrónicas Simples</h4>
+                        <form id="form-firma" onsubmit="Casos.crearFirma(event)" class="grid grid-cols-2 gap-2 mb-3 no-print">
                             <select id="firma-tipo-documento" class="form-select form-select-sm col-span-2">
                                 <option value="Citación">Citación de Apoderado</option>
                                 <option value="Acuerdo Reparatorio">Acuerdo Reparatorio</option>
@@ -624,7 +628,7 @@
                         <div id="lista-firmas" class="space-y-1 text-xs"></div>
                     </div>
 
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 no-print">
                         <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-comment-sms text-green-600 me-2"></i>Notificar Apoderado</h4>
                         <form id="form-notificar" onsubmit="Casos.notificarApoderado(event)" class="space-y-2">
                             <div class="grid grid-cols-2 gap-2">

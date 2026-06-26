@@ -55,6 +55,11 @@ async function getCasoDetalle(colegioId, id, usuario) {
         [id]
     );
 
+    const { rows: colegioRows } = await pool.query("SELECT nombre, rbd FROM colegios WHERE id = $1", [colegioId]);
+    const { rows: protocoloRows } = await pool.query("SELECT nombre, normativa FROM protocolos WHERE categoria = $1", [
+        caso.categoria,
+    ]);
+
     const puedeVerPie =
         usuario && (usuario.rol === "admin" || usuario.rol === "superadmin" || usuario.especialidad === "Psicólogo PIE");
     const denunciaObligatoriaPendiente =
@@ -78,6 +83,10 @@ async function getCasoDetalle(colegioId, id, usuario) {
         diagnosticoPie: !caso.diagnostico_pie ? null : puedeVerPie ? caso.diagnostico_pie : "(Información PIE confidencial — acceso restringido)",
         beneficiosJunaeb: caso.beneficios_junaeb,
         denunciaObligatoriaPendiente,
+        colegioNombre: colegioRows[0]?.nombre || null,
+        colegioRbd: colegioRows[0]?.rbd || null,
+        protocoloNombre: protocoloRows[0]?.nombre || null,
+        protocoloNormativa: protocoloRows[0]?.normativa || null,
         pasosProtocolo,
         derivaciones,
         firmas,
@@ -427,6 +436,17 @@ const bitacora = asyncHandler(async (req, res) => {
     res.json(await getCasoDetalle(req.colegioId, req.params.id, req.usuario));
 });
 
+function seccionTitulo(doc, texto) {
+    doc.moveDown(0.8);
+    doc.fontSize(13).fillColor("#1e3a8a").text(texto, { underline: true });
+    doc.fillColor("#000000").fontSize(10);
+    doc.moveDown(0.3);
+}
+
+function lineaDato(doc, etiqueta, valor) {
+    doc.fontSize(10).fillColor("#475569").text(etiqueta, { continued: true }).fillColor("#000000").text(` ${valor}`);
+}
+
 const pdf = asyncHandler(async (req, res) => {
     const caso = await getCasoDetalle(req.colegioId, req.params.id, req.usuario);
     if (!caso) return res.status(404).json({ error: "Caso no encontrado." });
@@ -434,29 +454,138 @@ const pdf = asyncHandler(async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename=Expediente_${caso.folio}.pdf`);
 
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 50, bufferPages: true });
     doc.pipe(res);
 
-    doc.fontSize(16).text(`Expediente ${caso.folio}`, { underline: true });
-    doc.moveDown();
-    doc.fontSize(11);
-    doc.text(`Estudiante: ${caso.estudiante}`);
-    doc.text(`Categoría: ${caso.categoria}`);
-    doc.text(`Estado: ${caso.estado}`);
-    doc.text(`Fecha de apertura: ${caso.fechaApertura}`);
-    doc.text(`Responsable: ${caso.responsablePrincipal}`);
-    doc.moveDown();
-    doc.text("Descripción:", { underline: true });
-    doc.text(caso.descripcion);
-    doc.moveDown();
+    const hoy = new Date().toISOString().slice(0, 10);
 
-    doc.fontSize(13).text("Bitácora cronológica", { underline: true });
+    // Encabezado institucional
+    doc.fontSize(14).fillColor("#1e3a8a").text(caso.colegioNombre || "Establecimiento Educacional", { align: "center" });
+    if (caso.colegioRbd) {
+        doc.fontSize(9).fillColor("#64748b").text(`RBD: ${caso.colegioRbd}`, { align: "center" });
+    }
     doc.moveDown(0.5);
-    caso.bitacora.forEach((entrada) => {
-        doc.fontSize(11).text(`[${entrada.fecha}] ${entrada.tipo} — Operador: ${entrada.operador}`);
-        doc.fontSize(10).text(entrada.contenido);
-        doc.moveDown(0.5);
-    });
+    doc.fontSize(9).fillColor("#94a3b8").text(`Documento generado el ${new Date().toLocaleString("es-CL")}`, { align: "center" });
+    doc.moveDown(0.8);
+    doc.fillColor("#000000");
+    doc
+        .moveTo(50, doc.y)
+        .lineTo(doc.page.width - 50, doc.y)
+        .strokeColor("#cbd5e1")
+        .stroke();
+    doc.moveDown(0.8);
+
+    doc.fontSize(18).fillColor("#0f172a").text(`Expediente ${caso.folio}`, { underline: true });
+    doc.fontSize(11).fillColor("#475569").text(caso.categoria);
+    doc.fillColor("#000000");
+
+    // Datos generales
+    seccionTitulo(doc, "Datos Generales del Caso");
+    lineaDato(doc, "Estudiante:", caso.estudiante);
+    lineaDato(doc, "Curso:", caso.curso || "No registrado");
+    lineaDato(doc, "Estado:", caso.estado);
+    lineaDato(doc, "Fecha de apertura:", caso.fechaApertura);
+    if (caso.estado === "Cerrado") {
+        lineaDato(doc, "Fecha de cierre:", caso.fechaCierre || "-");
+        lineaDato(doc, "Motivo de cierre:", caso.motivoCierre || "-");
+    }
+    lineaDato(doc, "Días de permanencia:", String(caso.diasActivo));
+    lineaDato(doc, "Responsable principal:", caso.responsablePrincipal);
+    if (caso.beneficiosJunaeb) lineaDato(doc, "Beneficios JUNAEB:", caso.beneficiosJunaeb);
+
+    if (caso.tieneNee) {
+        seccionTitulo(doc, "Programa de Integración Escolar (PIE)");
+        doc.fontSize(10).text("Estudiante con Necesidades Educativas Especiales (NEE).");
+        doc.text(caso.diagnosticoPie || "Sin diagnóstico registrado.");
+    }
+
+    if (caso.denunciaObligatoriaPendiente) {
+        seccionTitulo(doc, "Aviso Legal");
+        doc.fillColor("#b91c1c").fontSize(10).text(
+            "DENUNCIA OBLIGATORIA PENDIENTE: este caso de Vulneración de Derechos aún no registra una denuncia a Carabineros, PDI, Fiscalía o Tribunal de Familia, conforme al Art. 175 letra e) del Código Procesal Penal."
+        );
+        doc.fillColor("#000000");
+    }
+
+    seccionTitulo(doc, "Descripción Inicial");
+    doc.fontSize(10).text(caso.descripcion);
+
+    seccionTitulo(doc, "Protocolo de Actuación Aplicado");
+    if (caso.protocoloNombre) {
+        doc.fontSize(10).text(caso.protocoloNombre, { continued: false });
+        doc.fontSize(8).fillColor("#64748b").text(caso.protocoloNormativa || "");
+        doc.fillColor("#000000");
+        doc.moveDown(0.3);
+    }
+    if (caso.pasosProtocolo.length === 0) {
+        doc.fontSize(10).text("Sin pasos de protocolo registrados.");
+    } else {
+        caso.pasosProtocolo.forEach((paso) => {
+            const vencido = !paso.completado && paso.fechaLimite && paso.fechaLimite < hoy;
+            const marca = paso.completado ? "[Completado]" : vencido ? "[VENCIDO]" : "[Pendiente]";
+            doc.fontSize(9).fillColor(vencido ? "#b91c1c" : paso.completado ? "#15803d" : "#475569").text(`${marca} `, {
+                continued: true,
+            });
+            doc.fillColor("#000000").text(`${paso.descripcion} (plazo: ${paso.fechaLimite || "sin definir"})`);
+        });
+    }
+
+    seccionTitulo(doc, "Derivaciones Externas");
+    if (caso.derivaciones.length === 0) {
+        doc.fontSize(10).text("Sin derivaciones registradas.");
+    } else {
+        caso.derivaciones.forEach((d) => {
+            doc.fontSize(10).text(`${d.institucion} — ${d.tipo} (${d.estado})`);
+            doc.fontSize(9).fillColor("#475569").text(
+                `Fecha: ${d.fechaDerivacion}${d.folioExterno ? ` — Folio externo: ${d.folioExterno}` : ""}`
+            );
+            if (d.notas) doc.text(`Notas: ${d.notas}`);
+            doc.fillColor("#000000");
+            doc.moveDown(0.2);
+        });
+    }
+
+    seccionTitulo(doc, "Firmas Electrónicas Simples");
+    if (caso.firmas.length === 0) {
+        doc.fontSize(10).text("Sin firmas registradas.");
+    } else {
+        caso.firmas.forEach((f) => {
+            doc.fontSize(10).text(
+                `${f.tipoDocumento} — ${f.nombreFirmante} (RUT ${f.rutFirmante}) — ${new Date(f.fechaFirma).toLocaleString("es-CL")}`
+            );
+        });
+    }
+
+    seccionTitulo(doc, "Bitácora Cronológica Oficial");
+    if (caso.bitacora.length === 0) {
+        doc.fontSize(10).text("Sin entradas de bitácora registradas.");
+    } else {
+        caso.bitacora.forEach((entrada) => {
+            doc.fontSize(10).fillColor("#0f172a").text(`[${entrada.fecha}] ${entrada.tipo} — Operador: ${entrada.operador}`);
+            doc.fillColor("#000000").fontSize(9).text(entrada.contenido);
+            if (entrada.tipo === "Entrevista" && entrada.consentimientoApoderado === false) {
+                doc.fontSize(8).fillColor("#b45309").text(
+                    `Entrevista sin consentimiento informado del apoderado. Justificación: ${entrada.justificacionSinConsentimiento || "no registrada"}.`
+                );
+                doc.fillColor("#000000");
+            }
+            doc.moveDown(0.4);
+        });
+    }
+
+    seccionTitulo(doc, "Cierre del Documento");
+    doc.fontSize(8).fillColor("#94a3b8").text(
+        "Este documento es un respaldo oficial generado automáticamente por el Sistema de Gestión de Casos Estudiantiles (SGE) y refleja el estado del expediente al momento de su generación."
+    );
+
+    const totalPaginas = doc.bufferedPageRange().count;
+    for (let i = 0; i < totalPaginas; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(8).fillColor("#94a3b8").text(`Página ${i + 1} de ${totalPaginas}`, 50, doc.page.height - 40, {
+            width: doc.page.width - 100,
+            align: "center",
+        });
+    }
 
     doc.end();
 });

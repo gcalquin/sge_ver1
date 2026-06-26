@@ -58,6 +58,11 @@ const Casos = (() => {
         document.getElementById("det-curso").innerText = caso.curso || "-";
         document.getElementById("btn-det-pdf").href = `${Api.API_BASE}/casos/${caso.id}/pdf`;
 
+        document.getElementById("print-header-colegio").innerText = caso.colegioNombre
+            ? `${caso.colegioNombre}${caso.colegioRbd ? ` (RBD ${caso.colegioRbd})` : ""}`
+            : "";
+        document.getElementById("print-header-fecha").innerText = `Documento generado el ${new Date().toLocaleString("es-CL")}`;
+
         document.getElementById("det-pie-wrap").classList.toggle("hidden", !caso.tieneNee);
         document.getElementById("det-pie-diagnostico").innerText = caso.diagnosticoPie || "";
         document.getElementById("det-junaeb-wrap").classList.toggle("hidden", !caso.beneficiosJunaeb);
@@ -91,6 +96,10 @@ const Casos = (() => {
     }
 
     function renderPasosProtocolo(caso) {
+        document.getElementById("det-protocolo-normativa").innerText = caso.protocoloNombre
+            ? `${caso.protocoloNombre} — ${caso.protocoloNormativa}`
+            : "";
+
         const cont = document.getElementById("lista-pasos-protocolo");
         const puedeEscribir = caso.estado !== "Cerrado" && App.estado.currentUser.rol !== "invitado";
         const hoy = new Date().toISOString().slice(0, 10);
