@@ -90,6 +90,8 @@ ALTER TABLE colegios ADD COLUMN IF NOT EXISTS rbd VARCHAR(20);
 ALTER TABLE colegios ADD COLUMN IF NOT EXISTS sostenedor_id INTEGER REFERENCES sostenedores(id);
 -- Días que se conserva un expediente Cerrado antes de quedar elegible para purga (Ley 19.628/21.719).
 ALTER TABLE colegios ADD COLUMN IF NOT EXISTS dias_retencion_cerrados INTEGER NOT NULL DEFAULT 1825;
+-- Logo institucional, guardado como data URI (CSP ya permite "data:" en imgSrc); opcional.
+ALTER TABLE colegios ADD COLUMN IF NOT EXISTS logo_data_uri TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_colegios_sostenedor ON colegios(sostenedor_id);
 
@@ -215,6 +217,8 @@ ALTER TABLE bitacora ADD COLUMN IF NOT EXISTS hash_anterior VARCHAR(64);
 -- Consentimiento informado para entrevistar a un menor (o aplicación del interés superior del niño sin él).
 ALTER TABLE bitacora ADD COLUMN IF NOT EXISTS consentimiento_apoderado BOOLEAN;
 ALTER TABLE bitacora ADD COLUMN IF NOT EXISTS justificacion_sin_consentimiento TEXT;
+-- Ampliado para admitir "Otro: <nombre del entrevistado>" cuando no es Estudiante ni Apoderado/Tutor.
+ALTER TABLE bitacora ALTER COLUMN subtipo_entrevista TYPE VARCHAR(120);
 
 CREATE INDEX IF NOT EXISTS idx_bitacora_caso ON bitacora(caso_id);
 CREATE INDEX IF NOT EXISTS idx_bitacora_fecha ON bitacora(fecha_ejecucion);

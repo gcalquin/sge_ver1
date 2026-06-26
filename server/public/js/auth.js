@@ -32,6 +32,15 @@ const Auth = (() => {
             ? colegioActual.nombre
             : "Administración Central";
 
+        const logoImg = document.getElementById("sidebar-colegio-logo");
+        if (colegioActual && colegioActual.logoDataUri) {
+            logoImg.src = colegioActual.logoDataUri;
+            logoImg.classList.remove("hidden");
+        } else {
+            logoImg.src = "";
+            logoImg.classList.add("hidden");
+        }
+
         evaluarPermisosYRestriccionesDeRoles();
 
         if (usuario.rol === "superadmin" && !colegioActual) {

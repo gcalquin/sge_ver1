@@ -6,6 +6,12 @@ const { ESPECIALIDADES } = require("./constants");
 // seleccionable por quien crea el usuario (admin del colegio o superadmin).
 // "especialidad" es un rol funcional típico del contexto escolar chileno, usado
 // para enrutar notificaciones (ej. derivar a quien tenga "Encargado de Convivencia Escolar").
+const usernameSchema = z
+    .string()
+    .min(3)
+    .max(80)
+    .regex(/^[a-zA-Z0-9._-]+$/, "El usuario solo admite letras, números, puntos, guiones y guion bajo.");
+
 const crearUsuarioColegioSchema = z.object({
     nombre: z.string().min(2),
     rol: z.string().min(2),
@@ -13,6 +19,25 @@ const crearUsuarioColegioSchema = z.object({
     especialidad: z.enum(ESPECIALIDADES).optional().nullable(),
     email: z.string().email().optional().nullable(),
     clave: z.string().min(4),
+    username: usernameSchema.optional().nullable(),
 });
 
-module.exports = { crearUsuarioColegioSchema };
+const actualizarUsuarioColegioSchema = z.object({
+    nombre: z.string().min(2),
+    rol: z.string().min(2),
+    rolPermiso: z.enum(["admin", "funcionario", "invitado"]),
+    especialidad: z.enum(ESPECIALIDADES).optional().nullable(),
+    email: z.string().email().optional().nullable(),
+    username: usernameSchema,
+    clave: z
+        .string()
+        .optional()
+        .nullable()
+        .refine((v) => !v || v.length >= 4, { message: "La clave debe tener al menos 4 caracteres." }),
+});
+
+const eliminarUsuarioSchema = z.object({
+    nuevoResponsableId: z.coerce.number().int().positive().optional(),
+});
+
+module.exports = { crearUsuarioColegioSchema, actualizarUsuarioColegioSchema, eliminarUsuarioSchema };

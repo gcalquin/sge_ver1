@@ -15,6 +15,7 @@ const actualizarColegioSchema = z.object({
     activo: z.boolean().optional(),
     rbd: z.string().min(2).max(20).optional().nullable(),
     sostenedorId: z.coerce.number().int().positive().optional().nullable(),
+    logoDataUri: z.null().optional(),
 });
 
 const actualizarConfiguracionSchema = z

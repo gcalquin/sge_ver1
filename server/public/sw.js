@@ -1,4 +1,4 @@
-const CACHE_NAME = "sge-shell-v1";
+const CACHE_NAME = "sge-shell-v2";
 const APP_SHELL = [
     "/index.html",
     "/manifest.json",
@@ -22,12 +22,17 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+    // skipWaiting evita que haya que cerrar todas las pestañas para que el nuevo
+    // service worker (y por tanto el app shell actualizado) entre en vigencia.
+    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
     event.waitUntil(
-        caches.keys().then((nombres) => Promise.all(nombres.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
+        caches
+            .keys()
+            .then((nombres) => Promise.all(nombres.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
+            .then(() => self.clients.claim())
     );
 });
 

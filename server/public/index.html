@@ -89,6 +89,7 @@
                 <button id="btn-volver-central" onclick="Colegios.salirContexto()" class="btn btn-xs btn-outline-info w-full text-[11px] py-1 hidden">
                     <i class="fa-solid fa-arrow-left me-1"></i> Volver a Central
                 </button>
+                <img id="sidebar-colegio-logo" class="hidden max-h-10 w-auto max-w-full mx-auto rounded bg-white p-0.5" alt="Logo del colegio">
                 <div class="flex items-center space-x-3 px-2 text-white">
                     <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs" id="avatar-sesion">U</div>
                     <div>
@@ -423,6 +424,10 @@
                                 <input type="email" id="eq-email" class="form-control form-control-sm" placeholder="nombre@colegio.cl">
                             </div>
                             <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Usuario para Iniciar Sesión</label>
+                                <input type="text" id="eq-username" class="form-control form-control-sm" placeholder="Se genera automático si se deja vacío">
+                            </div>
+                            <div>
                                 <label class="form-label text-xs font-semibold text-slate-600">Rol de Permisos *</label>
                                 <select class="form-select form-select-sm" id="eq-rol-permiso" required>
                                     <option value="funcionario">Funcionario (opera casos)</option>
@@ -445,6 +450,7 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th>Integrante</th>
+                                            <th>Usuario</th>
                                             <th>Especialidad / Rol</th>
                                             <th>Permisos</th>
                                             <th class="text-end">Acciones</th>
@@ -760,10 +766,15 @@
                         <div id="campos-entrevista" class="hidden space-y-2">
                             <div>
                                 <label class="form-label text-xs font-bold text-slate-600">Tipo de Entrevistado *</label>
-                                <select class="form-select form-select-sm" id="in-entrevista-tipo">
+                                <select class="form-select form-select-sm" id="in-entrevista-tipo" onchange="document.getElementById('campo-entrevista-otro').classList.toggle('hidden', this.value !== 'Otro')">
                                     <option value="Estudiante">Estudiante Involucrado</option>
                                     <option value="Apoderado / Tutor">Apoderado / Tutor Legal</option>
+                                    <option value="Otro">Otro</option>
                                 </select>
+                            </div>
+                            <div id="campo-entrevista-otro" class="hidden">
+                                <label class="form-label text-xs font-bold text-slate-600">¿Quién es? *</label>
+                                <input type="text" class="form-control form-control-sm" id="in-entrevista-otro-nombre" maxlength="100" placeholder="Nombre y relación con el estudiante (ej. Tío, Profesor de Educación Física)">
                             </div>
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="in-consentimiento" checked onchange="document.getElementById('campo-justificacion-consentimiento').classList.toggle('hidden', this.checked)">
@@ -835,6 +846,180 @@
                     <div class="modal-footer bg-slate-50 border-0 py-2">
                         <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-sm btn-danger bg-red-700 border-0">Cerrar Caso</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarSostenedor" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-purple-700 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold">Editar Sostenedor</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-editar-sostenedor" onsubmit="Colegios.guardarEdicionSostenedor(event)">
+                    <input type="hidden" id="edsost-id">
+                    <div class="modal-body p-4 space-y-3">
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600">Nombre *</label>
+                            <input type="text" id="edsost-nombre" class="form-control form-control-sm" required>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600">RUT</label>
+                            <input type="text" id="edsost-rut" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-primary bg-purple-700 border-0">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarColegio" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-blue-900 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold">Editar Colegio</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-editar-colegio" onsubmit="Colegios.guardarEdicionColegio(event)">
+                    <input type="hidden" id="edcol-id">
+                    <div class="modal-body p-4 space-y-3">
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600">Nombre *</label>
+                            <input type="text" id="edcol-nombre" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">RBD (MINEDUC)</label>
+                                <input type="text" id="edcol-rbd" class="form-control form-control-sm">
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Sostenedor</label>
+                                <select id="edcol-sostenedor" class="form-select form-select-sm">
+                                    <option value="">Sin sostenedor asignado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Comuna</label>
+                                <input type="text" id="edcol-comuna" class="form-control form-control-sm">
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Dirección</label>
+                                <input type="text" id="edcol-direccion" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600 d-block">Logo del Colegio (opcional)</label>
+                            <div class="flex items-center gap-3">
+                                <img id="edcol-logo-preview" class="hidden border border-slate-200 rounded bg-white" style="max-height:48px;max-width:120px;object-fit:contain" alt="Logo actual">
+                                <span id="edcol-logo-vacio" class="text-xs text-slate-400 italic">Sin logo cargado</span>
+                            </div>
+                            <input type="file" id="edcol-logo-file" accept="image/png,image/jpeg,image/webp,image/gif" class="form-control form-control-sm mt-2">
+                            <button type="button" onclick="Colegios.quitarLogoColegio()" id="edcol-btn-quitar-logo" class="btn btn-xs btn-outline-danger mt-2 hidden">Quitar logo</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-primary bg-blue-800 border-0">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarEquipo" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-slate-900 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold">Editar Integrante</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-editar-equipo" onsubmit="Equipo.guardarEdicionMiembro(event)">
+                    <input type="hidden" id="edeq-id">
+                    <div class="modal-body p-4 space-y-3">
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600">Nombre Completo *</label>
+                            <input type="text" id="edeq-nombre" class="form-control form-control-sm" required>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600">Rol Institucional *</label>
+                            <input type="text" id="edeq-rol" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Especialidad</label>
+                                <select class="form-select form-select-sm" id="edeq-especialidad">
+                                    <option value="">Sin especialidad</option>
+                                    <option value="Encargado de Convivencia Escolar">Encargado de Convivencia Escolar</option>
+                                    <option value="Psicólogo PIE">Psicólogo PIE</option>
+                                    <option value="Inspector General">Inspector General</option>
+                                    <option value="Trabajador Social">Trabajador Social</option>
+                                    <option value="Orientador">Orientador</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Rol de Permisos *</label>
+                                <select class="form-select form-select-sm" id="edeq-rol-permiso" required>
+                                    <option value="funcionario">Funcionario</option>
+                                    <option value="admin">Administrador</option>
+                                    <option value="invitado">Invitado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600">Correo</label>
+                            <input type="email" id="edeq-email" class="form-control form-control-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Usuario para Iniciar Sesión *</label>
+                                <input type="text" id="edeq-username" class="form-control form-control-sm" required>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600">Nueva Contraseña</label>
+                                <input type="password" id="edeq-password" class="form-control form-control-sm" placeholder="Dejar en blanco para no cambiar">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-primary bg-slate-800 border-0">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalReasignarCaso" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-amber-600 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Reasignación Requerida</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-reasignar-caso" onsubmit="Equipo.confirmarReasignacionYEliminar(event)">
+                    <input type="hidden" id="reas-usuario-id">
+                    <div class="modal-body p-4 space-y-3">
+                        <p class="text-xs text-slate-600">Este integrante tiene casos asignados. Elige a quién se traspasarán antes de removerlo del equipo. La reasignación quedará registrada en la bitácora de cada caso.</p>
+                        <div id="reas-lista-casos" class="text-xs bg-slate-50 border border-slate-200 rounded p-2 space-y-1 max-h-32 overflow-y-auto"></div>
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600">Nuevo Responsable *</label>
+                            <select id="reas-nuevo-responsable" class="form-select form-select-sm" required></select>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-danger bg-red-700 border-0">Reasignar y Remover</button>
                     </div>
                 </form>
             </div>

@@ -29,4 +29,14 @@ const actualizar = asyncHandler(async (req, res) => {
     res.json(rows[0]);
 });
 
-module.exports = { listar, crear, actualizar };
+const eliminar = asyncHandler(async (req, res) => {
+    const { rows: colegios } = await pool.query("SELECT count(*) FROM colegios WHERE sostenedor_id = $1", [req.params.id]);
+    if (Number(colegios[0].count) > 0) {
+        return res.status(409).json({ error: "No se puede eliminar: hay colegios asociados a este sostenedor." });
+    }
+    const { rowCount } = await pool.query("DELETE FROM sostenedores WHERE id = $1", [req.params.id]);
+    if (rowCount === 0) return res.status(404).json({ error: "Sostenedor no encontrado." });
+    res.json({ ok: true });
+});
+
+module.exports = { listar, crear, actualizar, eliminar };

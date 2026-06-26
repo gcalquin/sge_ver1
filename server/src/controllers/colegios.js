@@ -18,6 +18,18 @@ const listar = asyncHandler(async (req, res) => {
     res.json(rows);
 });
 
+const subirLogo = asyncHandler(async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No se recibió ninguna imagen." });
+
+    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+    const { rows } = await pool.query(`UPDATE colegios SET logo_data_uri = $1 WHERE id = $2 RETURNING *`, [
+        dataUri,
+        req.params.id,
+    ]);
+    if (!rows[0]) return res.status(404).json({ error: "Colegio no encontrado." });
+    res.json(rows[0]);
+});
+
 const crear = asyncHandler(async (req, res) => {
     const { nombre, comuna, direccion, rbd, sostenedorId } = req.body;
     const { rows } = await pool.query(
@@ -29,7 +41,7 @@ const crear = asyncHandler(async (req, res) => {
 
 const obtenerActual = asyncHandler(async (req, res) => {
     const { rows } = await pool.query(
-        `SELECT id, nombre, comuna, direccion, rbd, sostenedor_id AS "sostenedorId",
+        `SELECT id, nombre, comuna, direccion, rbd, sostenedor_id AS "sostenedorId", logo_data_uri AS "logoDataUri",
                 dias_alerta_critico AS "diasAlertaCritico", dias_retencion_cerrados AS "diasRetencionCerrados"
          FROM colegios WHERE id = $1`,
         [req.colegioId]
@@ -51,7 +63,7 @@ const actualizarConfiguracion = asyncHandler(async (req, res) => {
     res.json(rows[0]);
 });
 
-const MAPA_COLUMNAS = { sostenedorId: "sostenedor_id" };
+const MAPA_COLUMNAS = { sostenedorId: "sostenedor_id", logoDataUri: "logo_data_uri" };
 
 const actualizar = asyncHandler(async (req, res) => {
     const campos = req.body;
@@ -69,4 +81,4 @@ const actualizar = asyncHandler(async (req, res) => {
     res.json(rows[0]);
 });
 
-module.exports = { listarPublico, listar, crear, actualizar, obtenerActual, actualizarConfiguracion };
+module.exports = { listarPublico, listar, crear, actualizar, obtenerActual, actualizarConfiguracion, subirLogo };

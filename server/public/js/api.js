@@ -28,11 +28,13 @@ const Api = (() => {
                 throw new Error("Sesión inválida o expirada.");
             }
             if (!res.ok) {
-                let mensaje = "Error en la solicitud.";
+                let data = {};
                 try {
-                    mensaje = (await res.json()).error || mensaje;
+                    data = await res.json();
                 } catch (e) {}
-                throw new Error(mensaje);
+                const error = new Error(data.error || "Error en la solicitud.");
+                error.data = data;
+                throw error;
             }
             if (res.status === 204) return null;
             const contentType = res.headers.get("content-type") || "";

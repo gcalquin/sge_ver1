@@ -67,7 +67,10 @@ const me = asyncHandler(async (req, res) => {
     let colegioActual = null;
     const colegioId = req.usuario.rol === "superadmin" ? req.session.contextoColegioId : req.usuario.colegioId;
     if (colegioId) {
-        const { rows } = await pool.query("SELECT id, nombre FROM colegios WHERE id = $1", [colegioId]);
+        const { rows } = await pool.query(
+            `SELECT id, nombre, rbd, logo_data_uri AS "logoDataUri" FROM colegios WHERE id = $1`,
+            [colegioId]
+        );
         colegioActual = rows[0] || null;
     }
     res.json({ usuario: req.usuario, colegioActual });

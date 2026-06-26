@@ -85,6 +85,9 @@ const Bitacora = (() => {
         document.getElementById("in-consentimiento").checked = true;
         document.getElementById("campo-justificacion-consentimiento").classList.add("hidden");
         document.getElementById("in-justificacion-consentimiento").value = "";
+        document.getElementById("in-entrevista-tipo").value = "Estudiante";
+        document.getElementById("campo-entrevista-otro").classList.add("hidden");
+        document.getElementById("in-entrevista-otro-nombre").value = "";
 
         if (tipo === "entrevista") {
             document.getElementById("modal-accion-titulo").innerText = "Registrar Acta de Entrevista";
@@ -105,7 +108,17 @@ const Bitacora = (() => {
             contenido: document.getElementById("in-accion-desc").value,
         };
         if (tipo === "entrevista") {
-            payload.subtipo = document.getElementById("in-entrevista-tipo").value;
+            const tipoEntrevistado = document.getElementById("in-entrevista-tipo").value;
+            if (tipoEntrevistado === "Otro") {
+                const otroNombre = document.getElementById("in-entrevista-otro-nombre").value.trim();
+                if (!otroNombre) {
+                    App.mostrarToast("Indica quién es el otro entrevistado.", "danger");
+                    return;
+                }
+                payload.subtipo = `Otro: ${otroNombre}`;
+            } else {
+                payload.subtipo = tipoEntrevistado;
+            }
             payload.consentimientoApoderado = document.getElementById("in-consentimiento").checked;
             if (!payload.consentimientoApoderado) {
                 payload.justificacionSinConsentimiento = document.getElementById("in-justificacion-consentimiento").value;
