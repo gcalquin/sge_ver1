@@ -21,7 +21,12 @@ const Api = (() => {
 
         App.mostrarCargando(true);
         try {
-            const res = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: "same-origin" });
+            let res;
+            try {
+                res = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: "same-origin" });
+            } catch (e) {
+                throw new Error("No se pudo conectar con el servidor. Verifica tu conexión a internet e inténtalo nuevamente.");
+            }
 
             if (res.status === 401) {
                 Auth.cerrarSesion();
@@ -32,7 +37,7 @@ const Api = (() => {
                 try {
                     data = await res.json();
                 } catch (e) {}
-                const error = new Error(data.error || "Error en la solicitud.");
+                const error = new Error(construirMensajeError(data));
                 error.data = data;
                 throw error;
             }
@@ -45,22 +50,40 @@ const Api = (() => {
         }
     }
 
+    function construirMensajeError(data) {
+        let mensaje = data.error || "Error en la solicitud.";
+        const fieldErrors = data.detalles?.fieldErrors;
+        if (fieldErrors) {
+            const detalle = Object.entries(fieldErrors)
+                .filter(([, msgs]) => Array.isArray(msgs) && msgs.length)
+                .map(([campo, msgs]) => `${campo}: ${msgs[0]}`)
+                .join(" · ");
+            if (detalle) mensaje += ` (${detalle})`;
+        }
+        return mensaje;
+    }
+
     async function subirArchivo(path, formData) {
         if (!csrfToken) await obtenerCsrf();
         App.mostrarCargando(true);
         try {
-            const res = await fetch(`${API_BASE}${path}`, {
-                method: "POST",
-                body: formData,
-                headers: { "X-CSRF-Token": csrfToken },
-                credentials: "same-origin",
-            });
+            let res;
+            try {
+                res = await fetch(`${API_BASE}${path}`, {
+                    method: "POST",
+                    body: formData,
+                    headers: { "X-CSRF-Token": csrfToken },
+                    credentials: "same-origin",
+                });
+            } catch (e) {
+                throw new Error("No se pudo conectar con el servidor para subir el archivo. Verifica tu conexión a internet.");
+            }
             if (!res.ok) {
-                let mensaje = "No se pudo subir el archivo.";
+                let data = {};
                 try {
-                    mensaje = (await res.json()).error || mensaje;
+                    data = await res.json();
                 } catch (e) {}
-                throw new Error(mensaje);
+                throw new Error(construirMensajeError(data.error ? data : { error: "No se pudo subir el archivo." }));
             }
             return res.json();
         } finally {

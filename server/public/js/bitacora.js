@@ -33,7 +33,7 @@ const Bitacora = (() => {
 
             const adjuntosBtn =
                 Number(item.adjuntos) > 0
-                    ? `<button type="button" onclick="Bitacora.toggleAdjuntos(${casoId}, ${item.id})" class="text-[11px] text-blue-700 underline no-print">📎 ${item.adjuntos} archivo(s)</button>`
+                    ? `<button type="button" onclick="Bitacora.toggleAdjuntos(${casoId}, ${item.id})" class="text-xs text-blue-700 underline no-print">📎 ${item.adjuntos} archivo(s)</button>`
                     : "";
 
             container.innerHTML += `
@@ -42,14 +42,14 @@ const Bitacora = (() => {
                     <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
                         <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
                             <span class="text-xs font-bold text-slate-800">${titulo}</span>
-                            <span class="text-[11px] text-slate-900 bg-slate-100 font-bold px-2 py-0.5 rounded border border-slate-300 shadow-2xs">${item.fecha}</span>
+                            <span class="text-xs text-slate-900 bg-slate-100 font-bold px-2 py-0.5 rounded border border-slate-300 shadow-2xs">${item.fecha}</span>
                         </div>
                         <p class="text-xs text-slate-600 mb-1 leading-relaxed">${item.contenido}</p>
                         <div class="text-[9px] text-slate-400 border-t pt-1 mt-2 flex justify-between items-center">
                             <span>Operador Firmante: ${item.operador}</span>
                             ${adjuntosBtn}
                         </div>
-                        <div id="adjuntos-list-${item.id}" class="hidden mt-2 text-[11px] space-y-1 no-print"></div>
+                        <div id="adjuntos-list-${item.id}" class="hidden mt-2 text-xs space-y-1 no-print"></div>
                     </div>
                 </div>
             `;
@@ -89,12 +89,20 @@ const Bitacora = (() => {
         document.getElementById("campo-entrevista-otro").classList.add("hidden");
         document.getElementById("in-entrevista-otro-nombre").value = "";
 
+        const header = document.getElementById("modal-accion-header");
+        header.className = "modal-header text-white py-3";
         if (tipo === "entrevista") {
             document.getElementById("modal-accion-titulo").innerText = "Registrar Acta de Entrevista";
             document.getElementById("campos-entrevista").classList.remove("hidden");
+            header.classList.add("bg-blue-700");
         } else if (tipo === "medida") {
             document.getElementById("modal-accion-titulo").innerText = "Aplicar Medida Reparatoria";
             document.getElementById("campos-medida").classList.remove("hidden");
+            Convivencia.cargarOpcionesMedida(document.getElementById("in-medida-estado"));
+            header.classList.add("bg-purple-700");
+        } else {
+            document.getElementById("modal-accion-titulo").innerText = "Bitácora de Seguimiento";
+            header.classList.add("bg-amber-600");
         }
         new bootstrap.Modal(document.getElementById("modalAccionBitacora")).show();
     }

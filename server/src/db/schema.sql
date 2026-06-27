@@ -171,6 +171,20 @@ CREATE TRIGGER trg_casos_updated_at
     BEFORE UPDATE ON casos
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+-- Estudiantes adicionales de un caso (más allá del "estudiante" principal de la
+-- columna casos.estudiante, que se mantiene por compatibilidad con folio/PDF/CSV).
+-- Permite que un mismo caso involucre a varios estudiantes (ej. una pelea o un
+-- conflicto de convivencia entre dos o más alumnos) sin abrir un caso por cada uno.
+CREATE TABLE IF NOT EXISTS caso_estudiantes_adicionales (
+    id          SERIAL PRIMARY KEY,
+    caso_id     INTEGER NOT NULL REFERENCES casos(id) ON DELETE CASCADE,
+    nombre      VARCHAR(150) NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_caso_estudiantes_adicionales_caso ON caso_estudiantes_adicionales(caso_id);
+CREATE INDEX IF NOT EXISTS idx_caso_estudiantes_adicionales_fts
+    ON caso_estudiantes_adicionales USING GIN (to_tsvector('spanish', inmutable_unaccent(nombre)));
+
 -- Folio correlativo por colegio (CASO-00001, CASO-00002, ...), con bloqueo de
 -- fila sobre colegios para evitar folios duplicados ante inserciones concurrentes.
 CREATE OR REPLACE FUNCTION set_folio()
@@ -267,7 +281,7 @@ CREATE TABLE IF NOT EXISTS caso_pasos_protocolo (
 CREATE INDEX IF NOT EXISTS idx_pasos_protocolo_caso ON caso_pasos_protocolo(caso_id);
 
 -- ===================== derivaciones =====================
--- Derivaciones externas (OPD, Mejor Niñez, COSAM, hospital) y denuncias obligatorias
+-- Derivaciones externas (OLN, Mejor Niñez, COSAM, hospital) y denuncias obligatorias
 -- (Carabineros, PDI, Fiscalía, Tribunal de Familia) asociadas a un caso.
 CREATE TABLE IF NOT EXISTS derivaciones (
     id                  SERIAL PRIMARY KEY,
@@ -290,23 +304,6 @@ CREATE TRIGGER trg_derivaciones_updated_at
     BEFORE UPDATE ON derivaciones
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
--- ===================== firmas =====================
--- Firma electrónica simple (Ley 19.799) de recepción de citaciones o acuerdos reparatorios.
-CREATE TABLE IF NOT EXISTS firmas (
-    id               SERIAL PRIMARY KEY,
-    caso_id          INTEGER NOT NULL REFERENCES casos(id) ON DELETE CASCADE,
-    bitacora_id      INTEGER REFERENCES bitacora(id) ON DELETE CASCADE,
-    tipo_documento   VARCHAR(60) NOT NULL,
-    nombre_firmante  VARCHAR(150) NOT NULL,
-    rut_firmante     VARCHAR(20) NOT NULL,
-    fecha_firma      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    ip_origen        VARCHAR(64),
-    hash_documento   VARCHAR(64),
-    created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_firmas_caso ON firmas(caso_id);
-
 -- ===================== metas_pme =====================
 -- Metas del Plan de Mejoramiento Educativo del colegio, para cruzar con los
 -- indicadores de convivencia calculados por el sistema.
@@ -322,9 +319,12 @@ CREATE TABLE IF NOT EXISTS metas_pme (
 CREATE INDEX IF NOT EXISTS idx_metas_pme_colegio ON metas_pme(colegio_id);
 
 -- ===================== adjuntos =====================
+-- "Medios de verificación" genéricos: cada fila cuelga de una bitácora de caso,
+-- una derivación, una mediación o una actividad de convivencia (esta última sin
+-- caso asociado, por eso caso_id es nullable y actividad_id existe como alternativa).
 CREATE TABLE IF NOT EXISTS adjuntos (
     id            SERIAL PRIMARY KEY,
-    caso_id       INTEGER NOT NULL REFERENCES casos(id) ON DELETE CASCADE,
+    caso_id       INTEGER REFERENCES casos(id) ON DELETE CASCADE,
     bitacora_id   INTEGER REFERENCES bitacora(id) ON DELETE CASCADE,
     nombre_orig   VARCHAR(255) NOT NULL,
     nombre_disco  VARCHAR(255) NOT NULL,
@@ -334,8 +334,16 @@ CREATE TABLE IF NOT EXISTS adjuntos (
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE adjuntos ALTER COLUMN caso_id DROP NOT NULL;
+ALTER TABLE adjuntos ADD COLUMN IF NOT EXISTS derivacion_id INTEGER REFERENCES derivaciones(id) ON DELETE CASCADE;
+
 CREATE INDEX IF NOT EXISTS idx_adjuntos_caso ON adjuntos(caso_id);
 CREATE INDEX IF NOT EXISTS idx_adjuntos_bitacora ON adjuntos(bitacora_id);
+CREATE INDEX IF NOT EXISTS idx_adjuntos_derivacion ON adjuntos(derivacion_id);
+-- Las columnas mediacion_id y actividad_id de "adjuntos" se agregan más abajo en
+-- este script, una vez creadas las tablas mediaciones / actividades_convivencia
+-- a las que referencian (el archivo se ejecuta de arriba hacia abajo en una sola
+-- transacción, por lo que la tabla referenciada debe existir antes del ALTER).
 
 -- ===================== auditoria =====================
 CREATE TABLE IF NOT EXISTS auditoria (
@@ -439,8 +447,140 @@ INSERT INTO protocolos (categoria, nombre, normativa, pasos) VALUES
  '[
    {"orden":1,"descripcion":"Resguardo inmediato del estudiante y activación de medidas de protección.","plazoDias":1},
    {"orden":2,"descripcion":"Denuncia obligatoria a Carabineros, PDI o Fiscalía (plazo legal de 24 horas).","plazoDias":1},
-   {"orden":3,"descripcion":"Derivación a OPD, Mejor Niñez (ex-SENAME) u otra red de protección.","plazoDias":3},
+   {"orden":3,"descripcion":"Derivación a OLN (Oficina Local de la Niñez), Mejor Niñez (ex-SENAME) u otra red de protección.","plazoDias":3},
    {"orden":4,"descripcion":"Comunicación a la familia o adulto responsable no involucrado en la vulneración.","plazoDias":3},
    {"orden":5,"descripcion":"Seguimiento del proceso y cierre con informe a la dirección.","plazoDias":30}
  ]'::jsonb)
 ON CONFLICT (categoria) DO NOTHING;
+
+-- Renombre normativo: la antigua "OPD" (Oficina de Protección de Derechos) pasó a
+-- llamarse OLN (Oficina Local de la Niñez). Corrige bases ya sembradas con el texto viejo.
+UPDATE protocolos
+   SET pasos = REPLACE(pasos::text, 'Derivación a OPD,', 'Derivación a OLN (Oficina Local de la Niñez),')::jsonb
+ WHERE categoria = 'Vulneración de Derechos' AND pasos::text LIKE '%Derivación a OPD,%';
+
+-- ===================== mediaciones (actas de mediación escolar) =====================
+CREATE TABLE IF NOT EXISTS mediaciones (
+    id               SERIAL PRIMARY KEY,
+    caso_id          INTEGER NOT NULL REFERENCES casos(id) ON DELETE CASCADE,
+    fecha_mediacion  DATE NOT NULL,
+    participantes    VARCHAR(300) NOT NULL,
+    acuerdo          TEXT NOT NULL,
+    mediador_id      INTEGER NOT NULL REFERENCES usuarios(id),
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mediaciones_caso ON mediaciones(caso_id);
+
+CREATE TABLE IF NOT EXISTS mediacion_compromisos (
+    id              SERIAL PRIMARY KEY,
+    mediacion_id    INTEGER NOT NULL REFERENCES mediaciones(id) ON DELETE CASCADE,
+    descripcion     TEXT NOT NULL,
+    responsable     VARCHAR(150),
+    fecha_limite    DATE,
+    cumplido        BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_cumplido  DATE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mediacion_compromisos_mediacion ON mediacion_compromisos(mediacion_id);
+
+-- Ahora que "mediaciones" ya existe, se puede agregar la columna de adjuntos que la referencia.
+ALTER TABLE adjuntos ADD COLUMN IF NOT EXISTS mediacion_id INTEGER REFERENCES mediaciones(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_adjuntos_mediacion ON adjuntos(mediacion_id);
+
+-- ===================== capacitaciones del equipo =====================
+CREATE TABLE IF NOT EXISTS capacitaciones (
+    id                 SERIAL PRIMARY KEY,
+    colegio_id         INTEGER NOT NULL REFERENCES colegios(id) ON DELETE CASCADE,
+    usuario_id         INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    nombre             VARCHAR(200) NOT NULL,
+    institucion        VARCHAR(150),
+    fecha_obtencion    DATE NOT NULL,
+    fecha_vencimiento  DATE,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_capacitaciones_usuario ON capacitaciones(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_capacitaciones_colegio ON capacitaciones(colegio_id);
+
+-- ===================== actividades de convivencia escolar =====================
+-- Talleres, charlas y otras acciones preventivas, distintas del calendario de plazos legales.
+CREATE TABLE IF NOT EXISTS actividades_convivencia (
+    id            SERIAL PRIMARY KEY,
+    colegio_id    INTEGER NOT NULL REFERENCES colegios(id) ON DELETE CASCADE,
+    nombre        VARCHAR(200) NOT NULL,
+    tipo          VARCHAR(60) NOT NULL,
+    fecha         DATE NOT NULL,
+    descripcion   TEXT,
+    meta_pme_id   INTEGER REFERENCES metas_pme(id) ON DELETE SET NULL,
+    creado_por    INTEGER NOT NULL REFERENCES usuarios(id),
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE actividades_convivencia ADD COLUMN IF NOT EXISTS cerrada BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE actividades_convivencia ADD COLUMN IF NOT EXISTS fecha_cierre DATE;
+ALTER TABLE actividades_convivencia ADD COLUMN IF NOT EXISTS evaluacion_cierre TEXT;
+ALTER TABLE actividades_convivencia ADD COLUMN IF NOT EXISTS cerrada_por INTEGER REFERENCES usuarios(id);
+
+CREATE INDEX IF NOT EXISTS idx_actividades_convivencia_colegio ON actividades_convivencia(colegio_id);
+
+-- Ahora que "actividades_convivencia" ya existe, se puede agregar la columna de
+-- adjuntos que la referencia (medios de verificación: fotos, listas de asistencia, etc.).
+ALTER TABLE adjuntos ADD COLUMN IF NOT EXISTS actividad_id INTEGER REFERENCES actividades_convivencia(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_adjuntos_actividad ON adjuntos(actividad_id);
+
+-- ===================== bitácora de actividades de convivencia =====================
+-- Registro cronológico de seguimiento de una actividad (asistencia, avances, incidencias),
+-- análogo a la bitácora de un caso pero a nivel de actividad preventiva.
+CREATE TABLE IF NOT EXISTS actividad_bitacora (
+    id            SERIAL PRIMARY KEY,
+    actividad_id  INTEGER NOT NULL REFERENCES actividades_convivencia(id) ON DELETE CASCADE,
+    fecha         DATE NOT NULL,
+    contenido     TEXT NOT NULL,
+    operador_id   INTEGER NOT NULL REFERENCES usuarios(id),
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_actividad_bitacora_actividad ON actividad_bitacora(actividad_id);
+
+-- ===================== protocolos personalizados por colegio =====================
+-- Override opcional del catálogo global "protocolos" para una categoría dentro de un colegio.
+-- Si no existe override, se sigue usando el protocolo global (protocolos_base_id queda como referencia).
+CREATE TABLE IF NOT EXISTS protocolos_colegio (
+    id                  SERIAL PRIMARY KEY,
+    colegio_id          INTEGER NOT NULL REFERENCES colegios(id) ON DELETE CASCADE,
+    categoria           categoria_caso NOT NULL,
+    nombre              VARCHAR(150) NOT NULL,
+    normativa           VARCHAR(300),
+    pasos               JSONB NOT NULL,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (colegio_id, categoria)
+);
+
+DROP TRIGGER IF EXISTS trg_protocolos_colegio_updated_at ON protocolos_colegio;
+CREATE TRIGGER trg_protocolos_colegio_updated_at
+    BEFORE UPDATE ON protocolos_colegio
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ===================== catálogo de medidas reparatorias por colegio =====================
+CREATE TABLE IF NOT EXISTS medidas_catalogo (
+    id          SERIAL PRIMARY KEY,
+    colegio_id  INTEGER NOT NULL REFERENCES colegios(id) ON DELETE CASCADE,
+    nombre      VARCHAR(150) NOT NULL,
+    activo      BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (colegio_id, nombre)
+);
+
+-- Catálogo inicial por defecto para cada colegio ya existente (los 3 valores que estaban
+-- fijos en el formulario); los colegios nuevos lo reciben al crearse (ver controlador).
+INSERT INTO medidas_catalogo (colegio_id, nombre)
+SELECT c.id, m.nombre
+FROM colegios c
+CROSS JOIN (VALUES ('Compromiso de Mediación'), ('Derivación Psicológica'), ('Plan Reparatorio')) AS m(nombre)
+ON CONFLICT (colegio_id, nombre) DO NOTHING;
+
+-- Meses para considerar "reincidencia" tras el cierre de un caso (mejora 17).
+ALTER TABLE colegios ADD COLUMN IF NOT EXISTS meses_alerta_reincidencia INTEGER NOT NULL DEFAULT 6;

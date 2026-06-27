@@ -6,18 +6,20 @@ const { upload } = require("../config/upload");
 const {
     crearCasoSchema,
     actualizarCasoSchema,
+    estudianteAdicionalSchema,
     bitacoraSchema,
     cierreSchema,
     pasoProtocoloSchema,
     derivacionSchema,
     actualizarDerivacionSchema,
-    firmaSchema,
-    notificarApoderadoSchema,
+    mediacionSchema,
+    compromisoMediacionSchema,
+    actualizarCompromisoMediacionSchema,
 } = require("../validation/casos");
 const casosController = require("../controllers/casos");
 const adjuntosController = require("../controllers/adjuntos");
 const derivacionesController = require("../controllers/derivaciones");
-const firmasController = require("../controllers/firmas");
+const mediacionesController = require("../controllers/mediaciones");
 
 const router = express.Router();
 
@@ -32,6 +34,7 @@ const actualizarCasoConCierreSchema = actualizarCasoSchema.extend({
 router.get("/dashboard", casosController.dashboard);
 router.get("/elegibles-purga", requireRol("admin", "superadmin"), casosController.elegiblesPurga);
 router.get("/export-anonimo.csv", casosController.exportarAnonimoCsv);
+router.get("/export-pdf-zip", casosController.exportarPdfsZip);
 router.get("/", casosController.listar);
 router.post("/", requireEscritura, validar(crearCasoSchema), auditar("casos.crear"), casosController.crear);
 
@@ -45,6 +48,20 @@ router.patch(
 );
 router.delete("/:id/purgar", requireRol("admin", "superadmin"), auditar("casos.purgar"), casosController.purgar);
 router.get("/:id/pdf", casosController.pdf);
+
+router.post(
+    "/:id/estudiantes-adicionales",
+    requireEscritura,
+    validar(estudianteAdicionalSchema),
+    auditar("casos.estudianteAdicional.crear"),
+    casosController.agregarEstudianteAdicional
+);
+router.delete(
+    "/:id/estudiantes-adicionales/:estId",
+    requireEscritura,
+    auditar("casos.estudianteAdicional.eliminar"),
+    casosController.eliminarEstudianteAdicional
+);
 
 router.post(
     "/:id/bitacora",
@@ -78,17 +95,46 @@ router.patch(
     auditar("derivaciones.actualizar"),
     derivacionesController.actualizar
 );
-
-router.get("/:id/firmas", firmasController.listar);
-router.post("/:id/firmas", requireEscritura, validar(firmaSchema), auditar("firmas.crear"), firmasController.crear);
-
 router.post(
-    "/:id/notificar-apoderado",
+    "/:id/derivaciones/:derivacionId/adjuntos",
     requireEscritura,
-    validar(notificarApoderadoSchema),
-    auditar("casos.notificarApoderado"),
-    casosController.notificarApoderado
+    upload.array("archivos", 10),
+    auditar("derivaciones.adjuntos.subir"),
+    adjuntosController.subirParaDerivacion
 );
+router.get("/:id/derivaciones/:derivacionId/adjuntos", adjuntosController.listarPorDerivacion);
+
+router.get("/:id/mediaciones", mediacionesController.listar);
+router.post(
+    "/:id/mediaciones",
+    requireEscritura,
+    validar(mediacionSchema),
+    auditar("mediaciones.crear"),
+    mediacionesController.crear
+);
+router.post(
+    "/:id/mediaciones/:medId/compromisos",
+    requireEscritura,
+    validar(compromisoMediacionSchema),
+    auditar("mediaciones.compromiso.crear"),
+    mediacionesController.agregarCompromiso
+);
+router.patch(
+    "/:id/mediaciones/:medId/compromisos/:compId",
+    requireEscritura,
+    validar(actualizarCompromisoMediacionSchema),
+    auditar("mediaciones.compromiso.actualizar"),
+    mediacionesController.actualizarCompromiso
+);
+router.get("/:id/mediaciones/:medId/pdf", mediacionesController.pdf);
+router.post(
+    "/:id/mediaciones/:medId/adjuntos",
+    requireEscritura,
+    upload.array("archivos", 10),
+    auditar("mediaciones.adjuntos.subir"),
+    adjuntosController.subirParaMediacion
+);
+router.get("/:id/mediaciones/:medId/adjuntos", adjuntosController.listarPorMediacion);
 
 router.post(
     "/:id/bitacora/:bitId/adjuntos",

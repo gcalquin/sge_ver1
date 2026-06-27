@@ -26,7 +26,7 @@ const INSTITUCIONES_DERIVACION = [
     "PDI",
     "Fiscalía",
     "Tribunal de Familia",
-    "OPD",
+    "OLN (Oficina Local de la Niñez)",
     "Mejor Niñez (ex-SENAME)",
     "COSAM",
     "Hospital / Centro de Salud",
@@ -37,8 +37,6 @@ const TIPOS_DERIVACION = ["Denuncia Obligatoria", "Derivación de Apoyo"];
 
 const ESTADOS_DERIVACION = ["Pendiente", "Realizada", "Con Respuesta", "Cerrada"];
 
-const IDIOMAS_CITACION = ["es", "es-simple", "ht"];
-
 module.exports = {
     CATEGORIAS,
     ESTADOS,
@@ -48,5 +46,4 @@ module.exports = {
     INSTITUCIONES_DERIVACION,
     TIPOS_DERIVACION,
     ESTADOS_DERIVACION,
-    IDIOMAS_CITACION,
 };

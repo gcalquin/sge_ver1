@@ -22,9 +22,14 @@ const actualizarConfiguracionSchema = z
     .object({
         diasAlertaCritico: z.number().int().min(1).max(90).optional(),
         diasRetencionCerrados: z.number().int().min(30).max(7300).optional(),
+        mesesAlertaReincidencia: z.number().int().min(1).max(36).optional(),
     })
-    .refine((datos) => datos.diasAlertaCritico !== undefined || datos.diasRetencionCerrados !== undefined, {
-        message: "Debes enviar al menos un campo de configuración.",
-    });
+    .refine(
+        (datos) =>
+            datos.diasAlertaCritico !== undefined ||
+            datos.diasRetencionCerrados !== undefined ||
+            datos.mesesAlertaReincidencia !== undefined,
+        { message: "Debes enviar al menos un campo de configuración." }
+    );
 
 module.exports = { crearColegioSchema, actualizarColegioSchema, actualizarConfiguracionSchema };

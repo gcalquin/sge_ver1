@@ -98,8 +98,8 @@ const Colegios = (() => {
         tbody.innerHTML = "";
         colegiosCache.forEach((c) => {
             const badge = c.activo
-                ? '<span class="badge bg-success status-badge text-[10px]">Activo</span>'
-                : '<span class="badge bg-secondary status-badge text-[10px]">Inactivo</span>';
+                ? '<span class="badge bg-success status-badge text-xs">Activo</span>'
+                : '<span class="badge bg-secondary status-badge text-xs">Inactivo</span>';
             tbody.innerHTML += `
                 <tr>
                     <td class="font-bold text-slate-700">${c.nombre}</td>
@@ -110,13 +110,13 @@ const Colegios = (() => {
                     <td class="text-xs">${c.total_usuarios}</td>
                     <td class="text-xs">${c.total_casos}</td>
                     <td class="text-end space-x-1">
-                        <button onclick="Colegios.abrirEditarColegio(${c.id})" class="btn btn-xs btn-outline-secondary text-[11px]">
+                        <button onclick="Colegios.abrirEditarColegio(${c.id})" class="btn btn-xs btn-outline-secondary text-xs">
                             Editar
                         </button>
-                        <button onclick="Colegios.toggleActivo(${c.id}, ${!c.activo})" class="btn btn-xs btn-outline-secondary text-[11px]">
+                        <button onclick="Colegios.toggleActivo(${c.id}, ${!c.activo})" class="btn btn-xs btn-outline-secondary text-xs">
                             ${c.activo ? "Desactivar" : "Activar"}
                         </button>
-                        <button onclick="Colegios.entrarContexto(${c.id})" class="btn btn-xs btn-primary bg-blue-800 border-0 text-[11px]">
+                        <button onclick="Colegios.entrarContexto(${c.id})" class="btn btn-xs btn-primary bg-blue-800 border-0 text-xs">
                             Entrar
                         </button>
                     </td>

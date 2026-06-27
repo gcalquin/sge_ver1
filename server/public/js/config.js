@@ -3,26 +3,52 @@ const Config = (() => {
         const data = await Api.apiFetch("/colegios/actual");
         document.getElementById("cfg-dias-alerta").value = data.diasAlertaCritico;
         document.getElementById("cfg-dias-retencion").value = data.diasRetencionCerrados;
+        document.getElementById("cfg-meses-reincidencia").value = data.mesesAlertaReincidencia;
         document.getElementById("cfg-rbd").innerText = data.rbd || "(no asignado)";
 
         await renderPurga();
         await renderMetasPme();
+        await renderAuditoria();
+        App.inicializarTooltips();
     }
 
     async function guardarConfiguracion(e) {
         e.preventDefault();
         const diasAlertaCritico = parseInt(document.getElementById("cfg-dias-alerta").value, 10);
         const diasRetencionCerrados = parseInt(document.getElementById("cfg-dias-retencion").value, 10);
+        const mesesAlertaReincidencia = parseInt(document.getElementById("cfg-meses-reincidencia").value, 10);
         try {
             await Api.apiFetch("/colegios/actual", {
                 method: "PATCH",
-                body: JSON.stringify({ diasAlertaCritico, diasRetencionCerrados }),
+                body: JSON.stringify({ diasAlertaCritico, diasRetencionCerrados, mesesAlertaReincidencia }),
             });
             App.mostrarToast("Configuración guardada.", "success");
             await renderPurga();
         } catch (err) {
             App.mostrarToast(err.message, "danger");
         }
+    }
+
+    async function renderAuditoria() {
+        const card = document.getElementById("card-auditoria");
+        const esAdmin = App.estado.currentUser.rol === "admin" || App.estado.currentUser.rol === "superadmin";
+        card.classList.toggle("hidden", !esAdmin);
+        if (!esAdmin) return;
+
+        const registros = await Api.apiFetch("/reportes/auditoria");
+        const tbody = document.getElementById("tabla-auditoria-body");
+        tbody.innerHTML = registros.length
+            ? registros
+                  .map(
+                      (r) => `<tr>
+                          <td class="text-slate-500">${new Date(r.creadoEn).toLocaleString("es-CL")}</td>
+                          <td>${r.usuario || "-"}</td>
+                          <td><span class="badge bg-slate-100 text-slate-700 status-badge text-xs">${r.accion}</span></td>
+                          <td class="text-slate-400 font-mono text-xs">${r.detalle && Object.keys(r.detalle).length ? JSON.stringify(r.detalle) : "-"}</td>
+                      </tr>`
+                  )
+                  .join("")
+            : '<tr><td colspan="4" class="text-slate-400 italic text-center py-2">Sin registros de auditoría.</td></tr>';
     }
 
     async function renderPurga() {
@@ -41,7 +67,11 @@ const Config = (() => {
             App.mostrarToast("No hay casos elegibles para purgar.", "info");
             return;
         }
-        if (!confirm(`Esto eliminará permanentemente ${data.casos.length} caso(s) cerrado(s) que superaron el período de retención. ¿Confirmas?`)) return;
+        const ok = await App.confirmar(
+            `Esto eliminará permanentemente ${data.casos.length} caso(s) cerrado(s) que superaron el período de retención. Esta acción no se puede deshacer.`,
+            { titulo: "Purgar casos elegibles", textoBoton: "Purgar" }
+        );
+        if (!ok) return;
 
         for (const c of data.casos) {
             try {

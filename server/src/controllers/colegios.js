@@ -30,19 +30,27 @@ const subirLogo = asyncHandler(async (req, res) => {
     res.json(rows[0]);
 });
 
+const MEDIDAS_CATALOGO_DEFAULT = ["Compromiso de Mediación", "Derivación Psicológica", "Plan Reparatorio"];
+
 const crear = asyncHandler(async (req, res) => {
     const { nombre, comuna, direccion, rbd, sostenedorId } = req.body;
     const { rows } = await pool.query(
         `INSERT INTO colegios (nombre, comuna, direccion, rbd, sostenedor_id) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
         [nombre, comuna || null, direccion || null, rbd || null, sostenedorId || null]
     );
+
+    for (const medida of MEDIDAS_CATALOGO_DEFAULT) {
+        await pool.query("INSERT INTO medidas_catalogo (colegio_id, nombre) VALUES ($1, $2)", [rows[0].id, medida]);
+    }
+
     res.status(201).json(rows[0]);
 });
 
 const obtenerActual = asyncHandler(async (req, res) => {
     const { rows } = await pool.query(
         `SELECT id, nombre, comuna, direccion, rbd, sostenedor_id AS "sostenedorId", logo_data_uri AS "logoDataUri",
-                dias_alerta_critico AS "diasAlertaCritico", dias_retencion_cerrados AS "diasRetencionCerrados"
+                dias_alerta_critico AS "diasAlertaCritico", dias_retencion_cerrados AS "diasRetencionCerrados",
+                meses_alerta_reincidencia AS "mesesAlertaReincidencia"
          FROM colegios WHERE id = $1`,
         [req.colegioId]
     );
@@ -50,15 +58,17 @@ const obtenerActual = asyncHandler(async (req, res) => {
 });
 
 const actualizarConfiguracion = asyncHandler(async (req, res) => {
-    const { diasAlertaCritico, diasRetencionCerrados } = req.body;
+    const { diasAlertaCritico, diasRetencionCerrados, mesesAlertaReincidencia } = req.body;
     const { rows } = await pool.query(
         `UPDATE colegios
             SET dias_alerta_critico = COALESCE($1, dias_alerta_critico),
-                dias_retencion_cerrados = COALESCE($2, dias_retencion_cerrados)
-          WHERE id = $3
+                dias_retencion_cerrados = COALESCE($2, dias_retencion_cerrados),
+                meses_alerta_reincidencia = COALESCE($3, meses_alerta_reincidencia)
+          WHERE id = $4
         RETURNING id, nombre, comuna, direccion, rbd, sostenedor_id AS "sostenedorId",
-                  dias_alerta_critico AS "diasAlertaCritico", dias_retencion_cerrados AS "diasRetencionCerrados"`,
-        [diasAlertaCritico ?? null, diasRetencionCerrados ?? null, req.colegioId]
+                  dias_alerta_critico AS "diasAlertaCritico", dias_retencion_cerrados AS "diasRetencionCerrados",
+                  meses_alerta_reincidencia AS "mesesAlertaReincidencia"`,
+        [diasAlertaCritico ?? null, diasRetencionCerrados ?? null, mesesAlertaReincidencia ?? null, req.colegioId]
     );
     res.json(rows[0]);
 });

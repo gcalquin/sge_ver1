@@ -29,24 +29,26 @@ const Equipo = (() => {
         const puedeGestionar = App.estado.currentUser.rol === "admin" || App.estado.currentUser.rol === "superadmin";
         App.estado.equipoCache.forEach((m) => {
             const esUnoMismo = m.id === App.estado.currentUser.id;
+            const btnCapacitaciones = `<button onclick="Capacitaciones.abrirModal(${m.id}, '${m.nombre.replace(/'/g, "\\'")}')" class="text-purple-700 text-xs font-bold hover:underline me-2">Capacitaciones</button>`;
             const acciones = puedeGestionar
-                ? `<button onclick="Equipo.abrirEditarMiembro(${m.id})" class="text-blue-700 text-xs font-bold hover:underline me-2">Editar</button>` +
+                ? btnCapacitaciones +
+                  `<button onclick="Equipo.abrirEditarMiembro(${m.id})" class="text-blue-700 text-xs font-bold hover:underline me-2">Editar</button>` +
                   (esUnoMismo
                       ? `<span class="text-slate-300 text-xs italic">Tú</span>`
                       : `<button onclick="Equipo.eliminarMiembroEquipo(${m.id})" class="text-red-600 text-xs font-bold hover:underline">Remover</button>`)
-                : `<span class="text-slate-300 text-xs italic">Protegido</span>`;
+                : btnCapacitaciones + `<span class="text-slate-300 text-xs italic">Protegido</span>`;
             const badgePermiso =
                 m.rolPermiso === "admin"
                     ? "bg-primary"
                     : m.rolPermiso === "invitado"
                       ? "bg-secondary"
                       : "bg-success";
-            const especialidad = m.especialidad ? `<br><span class="text-[10px] text-purple-600">${m.especialidad}</span>` : "";
+            const especialidad = m.especialidad ? `<br><span class="text-xs text-purple-600">${m.especialidad}</span>` : "";
             tbody.innerHTML += `<tr>
                 <td class="font-bold text-slate-700">${m.nombre}</td>
                 <td class="text-xs font-mono text-slate-500">${m.username}</td>
                 <td class="text-slate-600 text-xs">${m.rolInstitucional}${especialidad}</td>
-                <td><span class="badge ${badgePermiso} status-badge text-[10px]">${ETIQUETAS_PERMISO[m.rolPermiso] || m.rolPermiso}</span></td>
+                <td><span class="badge ${badgePermiso} status-badge text-xs">${ETIQUETAS_PERMISO[m.rolPermiso] || m.rolPermiso}</span></td>
                 <td class="text-end">${acciones}</td>
             </tr>`;
         });

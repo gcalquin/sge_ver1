@@ -1,4 +1,4 @@
-const CACHE_NAME = "sge-shell-v2";
+const CACHE_NAME = "sge-shell-v10";
 const APP_SHELL = [
     "/index.html",
     "/manifest.json",
@@ -16,6 +16,9 @@ const APP_SHELL = [
     "/js/dashboard.js",
     "/js/casos.js",
     "/js/bitacora.js",
+    "/js/mediaciones.js",
+    "/js/capacitaciones.js",
+    "/js/convivencia.js",
     "/js/equipo.js",
     "/js/config.js",
     "/js/offline.js",

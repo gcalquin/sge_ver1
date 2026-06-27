@@ -22,19 +22,42 @@ const App = (() => {
         setTimeout(() => toast.remove(), 5000);
     }
 
+    let resolverConfirmarPendiente = null;
+
+    function confirmar(mensaje, opciones = {}) {
+        document.getElementById("confirmar-titulo").innerText = opciones.titulo || "Confirmar acción";
+        document.getElementById("confirmar-mensaje").innerText = mensaje;
+        document.getElementById("confirmar-btn-aceptar").innerText = opciones.textoBoton || "Confirmar";
+        const modalEl = document.getElementById("modalConfirmar");
+        new bootstrap.Modal(modalEl).show();
+        return new Promise((resolve) => {
+            resolverConfirmarPendiente = (valor) => {
+                bootstrap.Modal.getInstance(modalEl).hide();
+                resolverConfirmarPendiente = null;
+                resolve(valor);
+            };
+        });
+    }
+
+    function resolverConfirmar(valor) {
+        if (resolverConfirmarPendiente) resolverConfirmarPendiente(valor);
+    }
+
     function toggleMenuMobile() {
-        document.getElementById("sidebar").classList.toggle("mobile-open");
+        const abierto = document.getElementById("sidebar").classList.toggle("mobile-open");
+        document.getElementById("sidebar-backdrop").classList.toggle("hidden", !abierto);
     }
 
     function switchView(viewName) {
-        ["central", "dashboard", "casos", "equipo", "config", "detalle"].forEach((v) => {
+        ["central", "dashboard", "casos", "equipo", "convivencia", "config", "detalle"].forEach((v) => {
             document.getElementById(`view-${v}`).classList.add("hidden");
         });
-        ["central", "dashboard", "casos", "equipo", "config"].forEach((v) => {
+        ["central", "dashboard", "casos", "equipo", "convivencia", "config"].forEach((v) => {
             const btn = document.getElementById(`btn-nav-${v}`);
             if (btn) btn.classList.remove("active");
         });
         document.getElementById("sidebar").classList.remove("mobile-open");
+        document.getElementById("sidebar-backdrop").classList.add("hidden");
 
         if (viewName === "central") {
             document.getElementById("view-central").classList.remove("hidden");
@@ -57,6 +80,11 @@ const App = (() => {
             document.getElementById("page-title").innerText = "Configuración de Personal";
             Equipo.renderTablaEquipo();
             Equipo.renderProfesoresJefe();
+        } else if (viewName === "convivencia") {
+            document.getElementById("view-convivencia").classList.remove("hidden");
+            document.getElementById("btn-nav-convivencia").classList.add("active");
+            document.getElementById("page-title").innerText = "Gestión de Convivencia Escolar";
+            Convivencia.renderVista();
         } else if (viewName === "config") {
             document.getElementById("view-config").classList.remove("hidden");
             document.getElementById("btn-nav-config").classList.add("active");
@@ -68,10 +96,18 @@ const App = (() => {
         }
     }
 
+    function inicializarTooltips() {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
+            if (!bootstrap.Tooltip.getInstance(el)) new bootstrap.Tooltip(el);
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
+        inicializarTooltips();
+        document.getElementById("modalConfirmar").addEventListener("hidden.bs.modal", () => resolverConfirmar(false));
         await Colegios.cargarAmbitos();
         await Auth.verificarSesionExistente();
     });
 
-    return { estado, mostrarCargando, mostrarToast, toggleMenuMobile, switchView };
+    return { estado, mostrarCargando, mostrarToast, confirmar, resolverConfirmar, toggleMenuMobile, switchView, inicializarTooltips };
 })();

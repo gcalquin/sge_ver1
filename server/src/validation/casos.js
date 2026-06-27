@@ -6,13 +6,13 @@ const {
     INSTITUCIONES_DERIVACION,
     TIPOS_DERIVACION,
     ESTADOS_DERIVACION,
-    IDIOMAS_CITACION,
 } = require("./constants");
 
 const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida, usa AAAA-MM-DD.");
 
 const crearCasoSchema = z.object({
     estudiante: z.string().min(2),
+    estudiantesAdicionales: z.array(z.string().min(2).max(150)).max(20).optional().default([]),
     fechaApertura: fechaSchema,
     categoria: z.enum(CATEGORIAS),
     responsableId: z.coerce.number().int().positive(),
@@ -21,6 +21,10 @@ const crearCasoSchema = z.object({
     tieneNee: z.boolean().optional(),
     diagnosticoPie: z.string().optional().nullable(),
     beneficiosJunaeb: z.string().max(200).optional().nullable(),
+});
+
+const estudianteAdicionalSchema = z.object({
+    nombre: z.string().min(2).max(150),
 });
 
 const actualizarCasoSchema = z.object({
@@ -68,28 +72,33 @@ const actualizarDerivacionSchema = z.object({
     notas: z.string().optional().nullable(),
 });
 
-const firmaSchema = z.object({
-    bitacoraId: z.coerce.number().int().positive().optional().nullable(),
-    tipoDocumento: z.string().min(2).max(60),
-    nombreFirmante: z.string().min(2).max(150),
-    rutFirmante: z.string().min(3).max(20),
+const compromisoMediacionSchema = z.object({
+    descripcion: z.string().min(2),
+    responsable: z.string().max(150).optional().nullable(),
+    fechaLimite: fechaSchema.optional().nullable(),
 });
 
-const notificarApoderadoSchema = z.object({
-    canal: z.enum(["email", "whatsapp", "sms"]),
-    destinatario: z.string().min(3),
-    idioma: z.enum(IDIOMAS_CITACION).default("es"),
-    mensaje: z.string().min(5),
+const mediacionSchema = z.object({
+    fechaMediacion: fechaSchema,
+    participantes: z.string().min(2).max(300),
+    acuerdo: z.string().min(5),
+    compromisos: z.array(compromisoMediacionSchema).optional().default([]),
+});
+
+const actualizarCompromisoMediacionSchema = z.object({
+    cumplido: z.boolean(),
 });
 
 module.exports = {
     crearCasoSchema,
     actualizarCasoSchema,
+    estudianteAdicionalSchema,
     bitacoraSchema,
     cierreSchema,
     pasoProtocoloSchema,
     derivacionSchema,
     actualizarDerivacionSchema,
-    firmaSchema,
-    notificarApoderadoSchema,
+    mediacionSchema,
+    compromisoMediacionSchema,
+    actualizarCompromisoMediacionSchema,
 };

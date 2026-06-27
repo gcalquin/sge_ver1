@@ -28,22 +28,22 @@
             <div id="auth-alert" class="alert alert-danger p-2 text-xs hidden"></div>
             <form onsubmit="Auth.procesarLogin(event)" class="space-y-3">
                 <div>
-                    <label class="form-label text-xs font-bold text-slate-600">Ámbito</label>
+                    <label class="form-label text-xs font-bold text-slate-600" for="auth-ambito">Ámbito</label>
                     <select id="auth-ambito" class="form-select form-select-sm" required>
                         <option value="central">Administración Central</option>
                     </select>
                 </div>
                 <div>
-                    <label class="form-label text-xs font-bold text-slate-600">Usuario</label>
+                    <label class="form-label text-xs font-bold text-slate-600" for="auth-user">Usuario</label>
                     <input type="text" id="auth-user" class="form-control form-control-sm" required>
                 </div>
                 <div>
-                    <label class="form-label text-xs font-bold text-slate-600">Contraseña</label>
+                    <label class="form-label text-xs font-bold text-slate-600" for="auth-pass">Contraseña</label>
                     <input type="password" id="auth-pass" class="form-control form-control-sm" required>
                 </div>
                 <button type="submit" class="btn btn-sm btn-primary bg-blue-800 hover:bg-blue-900 border-0 w-full py-2 font-semibold">Ingresar al Sistema</button>
             </form>
-            <div class="bg-slate-50 p-2.5 rounded text-[11px] text-slate-500 space-y-1">
+            <div class="bg-slate-50 p-2.5 rounded text-xs text-slate-500 space-y-1">
                 <p class="font-bold border-b pb-0.5 mb-1">Cuentas de Demostración:</p>
                 <p>• <b>Super-admin (Central):</b> superadmin / <span class="font-mono">super123</span></p>
                 <p>• <b>Admin de colegio:</b> admin / <span class="font-mono">admin123</span></p>
@@ -56,29 +56,38 @@
     <div class="flex h-screen overflow-hidden">
         <div id="sidebar" class="sidebar w-64 flex-shrink-0 flex flex-col justify-between p-4 hidden md:flex no-print">
             <div>
-                <div class="flex items-center space-x-3 mb-8 px-2 text-white">
-                    <i class="fa-solid fa-graduation-cap text-2xl text-blue-400"></i>
-                    <span class="text-lg font-bold tracking-wider">SGE Casos</span>
+                <div class="flex items-center justify-between mb-8 px-2 text-white">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-graduation-cap text-2xl text-blue-400"></i>
+                        <span class="text-lg font-bold tracking-wider">SGE Casos</span>
+                    </div>
+                    <button onclick="App.toggleMenuMobile()" class="btn btn-sm btn-outline-secondary md:hidden text-slate-300 border-slate-600">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
-                <p id="sidebar-colegio" class="text-[11px] text-slate-400 px-2 mb-4"></p>
+                <p id="sidebar-colegio" class="text-xs text-slate-400 px-2 mb-4"></p>
                 <nav class="space-y-1">
-                    <button onclick="App.switchView('central')" id="btn-nav-central" class="nav-link-custom hidden w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                    <button onclick="App.switchView('central')" id="btn-nav-central" class="nav-link-custom hidden w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium" data-bs-toggle="tooltip" data-bs-placement="right" title="Administra colegios y sostenedores a nivel de toda la red.">
                         <i class="fa-solid fa-building-columns w-5 text-center"></i>
                         <span>Panel Central</span>
                     </button>
-                    <button onclick="App.switchView('dashboard')" id="btn-nav-dashboard" class="nav-link-custom active w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                    <button onclick="App.switchView('dashboard')" id="btn-nav-dashboard" class="nav-link-custom active w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium" data-bs-toggle="tooltip" data-bs-placement="right" title="Resumen de indicadores, alertas y carga de trabajo del colegio.">
                         <i class="fa-solid fa-chart-pie w-5 text-center"></i>
                         <span>Dashboard</span>
                     </button>
-                    <button onclick="App.switchView('casos')" id="btn-nav-casos" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                    <button onclick="App.switchView('casos')" id="btn-nav-casos" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium" data-bs-toggle="tooltip" data-bs-placement="right" title="Lista y filtra todos los casos del colegio.">
                         <i class="fa-solid fa-folder-open w-5 text-center"></i>
                         <span>Gestión de Casos</span>
                     </button>
-                    <button onclick="App.switchView('equipo')" id="btn-nav-equipo" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                    <button onclick="App.switchView('equipo')" id="btn-nav-equipo" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium" data-bs-toggle="tooltip" data-bs-placement="right" title="Administra el personal autorizado y sus capacitaciones.">
                         <i class="fa-solid fa-users-gear w-5 text-center"></i>
                         <span>Gestor de Equipo</span>
                     </button>
-                    <button onclick="App.switchView('config')" id="btn-nav-config" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium">
+                    <button onclick="App.switchView('convivencia')" id="btn-nav-convivencia" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium" data-bs-toggle="tooltip" data-bs-placement="right" title="Actividades preventivas, catálogo de medidas reparatorias y protocolos personalizados.">
+                        <i class="fa-solid fa-people-group w-5 text-center"></i>
+                        <span>Convivencia</span>
+                    </button>
+                    <button onclick="App.switchView('config')" id="btn-nav-config" class="nav-link-custom w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium" data-bs-toggle="tooltip" data-bs-placement="right" title="Umbrales de alerta, retención de datos, metas PME y auditoría.">
                         <i class="fa-solid fa-sliders w-5 text-center"></i>
                         <span>Configuración</span>
                     </button>
@@ -86,7 +95,10 @@
             </div>
 
             <div class="border-t border-slate-700 pt-4 space-y-2">
-                <button id="btn-volver-central" onclick="Colegios.salirContexto()" class="btn btn-xs btn-outline-info w-full text-[11px] py-1 hidden">
+                <a href="/manual.html" target="_blank" class="btn btn-xs btn-outline-secondary w-full text-xs py-1 border-slate-600 text-slate-300 hover:bg-slate-800">
+                    <i class="fa-solid fa-book me-1"></i> Manual de Usuario
+                </a>
+                <button id="btn-volver-central" onclick="Colegios.salirContexto()" class="btn btn-xs btn-outline-info w-full text-xs py-1 hidden">
                     <i class="fa-solid fa-arrow-left me-1"></i> Volver a Central
                 </button>
                 <img id="sidebar-colegio-logo" class="hidden max-h-10 w-auto max-w-full mx-auto rounded bg-white p-0.5" alt="Logo del colegio">
@@ -94,14 +106,15 @@
                     <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs" id="avatar-sesion">U</div>
                     <div>
                         <p class="text-xs font-semibold" id="current-user-name">Cargando...</p>
-                        <p class="text-[10px] text-slate-400" id="current-user-role">Rol</p>
+                        <p class="text-xs text-slate-400" id="current-user-role">Rol</p>
                     </div>
                 </div>
-                <button onclick="Auth.cerrarSesion()" class="btn btn-xs btn-outline-danger w-full text-[11px] py-1 border-red-800 text-red-400 hover:bg-red-950">
+                <button onclick="Auth.cerrarSesion()" class="btn btn-xs btn-outline-danger w-full text-xs py-1 border-red-800 text-red-400 hover:bg-red-950">
                     <i class="fa-solid fa-right-from-bracket me-1"></i> Cerrar Sesión
                 </button>
             </div>
         </div>
+        <div id="sidebar-backdrop" class="hidden md:hidden" onclick="App.toggleMenuMobile()"></div>
 
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm no-print">
@@ -125,25 +138,25 @@
                         <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-building-circle-arrow-right text-blue-600 me-2"></i>Crear Colegio</h4>
                         <form id="form-colegio" onsubmit="Colegios.crearColegio(event)" class="space-y-3">
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Nombre *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="col-nombre">Nombre *</label>
                                 <input type="text" id="col-nombre" class="form-control form-control-sm" required>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">RBD (MINEDUC)</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="col-rbd" data-bs-toggle="tooltip" title="Rol Base de Datos: código oficial del establecimiento asignado por MINEDUC.">RBD (MINEDUC)</label>
                                 <input type="text" id="col-rbd" class="form-control form-control-sm" placeholder="Ej. 10234">
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Sostenedor</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="col-sostenedor" data-bs-toggle="tooltip" title="Entidad (corporación, fundación o persona natural) responsable legalmente del colegio.">Sostenedor</label>
                                 <select id="col-sostenedor" class="form-select form-select-sm">
                                     <option value="">Sin sostenedor asignado</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Comuna</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="col-comuna">Comuna</label>
                                 <input type="text" id="col-comuna" class="form-control form-control-sm">
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Dirección</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="col-direccion">Dirección</label>
                                 <input type="text" id="col-direccion" class="form-control form-control-sm">
                             </div>
                             <button type="submit" class="btn btn-sm btn-primary bg-blue-800 border-0 w-full mt-2">Crear Colegio</button>
@@ -157,7 +170,7 @@
                             <input type="text" id="sost-rut" class="form-control form-control-sm" placeholder="RUT (opcional)">
                             <button type="submit" class="btn btn-sm btn-outline-secondary w-full">Agregar Sostenedor</button>
                         </form>
-                        <div id="lista-sostenedores" class="space-y-1 text-xs"></div>
+                        <div id="lista-sostenedores" class="space-y-1 text-xs max-h-56 overflow-y-auto"></div>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
                         <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-list text-slate-500 me-2"></i>Colegios Registrados</h4>
@@ -165,7 +178,7 @@
                             <table class="table align-middle text-sm">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Colegio</th><th>RBD</th><th>Sostenedor</th><th>Comuna</th><th>Estado</th><th>Usuarios</th><th>Casos</th><th class="text-end">Acciones</th>
+                                        <th>Colegio</th><th>RBD</th><th>Sostenedor</th><th>Comuna</th><th data-bs-toggle="tooltip" title="Un colegio desactivado no permite el inicio de sesión de sus usuarios.">Estado</th><th>Usuarios</th><th>Casos</th><th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabla-colegios-body"></tbody>
@@ -195,13 +208,13 @@
                         <div>
                             <input type="date" id="db-filter-desde" onchange="Dashboard.actualizarMetricasDashboard()" class="form-control form-control-sm text-xs border-slate-200" title="Fecha Desde">
                         </div>
-                        <button onclick="Dashboard.enviarResumenAlertas()" class="btn btn-outline-primary btn-sm border-blue-600 text-blue-700">
+                        <button onclick="Dashboard.enviarResumenAlertas()" class="btn btn-outline-primary btn-sm border-blue-600 text-blue-700" data-bs-toggle="tooltip" title="Envía por correo un resumen de las alertas críticas actuales a los responsables del colegio.">
                             <i class="fa-solid fa-envelope me-1"></i> Enviar Resumen por Email
                         </button>
-                        <a href="#" id="btn-export-superintendencia" class="btn btn-outline-dark btn-sm">
+                        <a href="#" id="btn-export-superintendencia" class="btn btn-outline-dark btn-sm" data-bs-toggle="tooltip" title="Descarga un CSV con el formato exigido por la Superintendencia de Educación.">
                             <i class="fa-solid fa-file-csv me-1"></i> Reporte Superintendencia (CSV)
                         </a>
-                        <a href="#" id="btn-export-anonimo" class="btn btn-outline-dark btn-sm">
+                        <a href="#" id="btn-export-anonimo" class="btn btn-outline-dark btn-sm" data-bs-toggle="tooltip" title="Descarga un CSV sin datos identificables del estudiante, útil para análisis estadístico externo.">
                             <i class="fa-solid fa-user-secret me-1"></i> Export Anónimo (CSV)
                         </a>
                     </div>
@@ -239,10 +252,10 @@
                 </div>
 
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-red-100 bg-gradient-to-r from-white to-red-50/20">
-                    <h4 class="text-sm font-bold text-red-800 flex items-center mb-3">
+                    <h4 class="text-sm font-bold text-red-800 flex items-center mb-3" data-bs-toggle="tooltip" title="Casos que no han recibido una nueva entrada de bitácora dentro del umbral configurado en Configuración.">
                         <i class="fa-solid fa-triangle-exclamation text-red-500 me-2"></i>
                         <span>Panel de Alertas Críticas y Alertas Tempranas (Convivencia Escolar)</span>
-                        <span class="ms-2 text-[11px] font-normal text-red-400">(≥ <span id="lbl-dias-alerta-critico">10</span> días sin actividad)</span>
+                        <span class="ms-2 text-xs font-normal text-red-400">(≥ <span id="lbl-dias-alerta-critico">10</span> días sin actividad)</span>
                     </h4>
                     <div id="contenedor-alertas" class="space-y-2 max-h-48 overflow-y-auto"></div>
                 </div>
@@ -258,25 +271,50 @@
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                         <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Efectividad de Medidas</h4>
-                        <p class="text-[11px] text-slate-400 mb-3">Tasa de no reincidencia tras compromisos aplicados</p>
+                        <p class="text-xs text-slate-400 mb-3">Tasa de no reincidencia tras compromisos aplicados</p>
                         <div class="h-48"><canvas id="chartImpacto"></canvas></div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-100">
-                        <h4 class="text-sm font-bold text-amber-800 flex items-center mb-3">
+                        <h4 class="text-sm font-bold text-amber-800 flex items-center mb-3" data-bs-toggle="tooltip" title="Pasos de protocolo cuyo plazo legal vence dentro de los próximos 7 días.">
                             <i class="fa-solid fa-calendar-days text-amber-500 me-2"></i>
                             <span>Próximos Vencimientos de Protocolo (7 días)</span>
                         </h4>
                         <div id="contenedor-vencimientos" class="space-y-1 text-xs max-h-56 overflow-y-auto"></div>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-purple-100">
-                        <h4 class="text-sm font-bold text-purple-800 flex items-center mb-3">
+                        <h4 class="text-sm font-bold text-purple-800 flex items-center mb-3" data-bs-toggle="tooltip" title="Compara el estado actual de cada indicador contra las metas del Plan de Mejoramiento Educativo definidas en Configuración.">
                             <i class="fa-solid fa-bullseye text-purple-500 me-2"></i>
                             <span>Cruce con Metas del PME</span>
                         </h4>
                         <div id="contenedor-pme" class="space-y-2 text-xs"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <h4 class="text-sm font-bold text-slate-700 flex items-center mb-3" data-bs-toggle="tooltip" title="Cantidad de casos activos asignados a cada miembro del equipo, para detectar sobrecarga.">
+                            <i class="fa-solid fa-scale-balanced text-blue-600 me-2"></i>
+                            <span>Carga de Trabajo por Responsable</span>
+                        </h4>
+                        <div id="contenedor-carga-trabajo" class="space-y-1 text-xs max-h-56 overflow-y-auto"></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-red-100">
+                        <h4 class="text-sm font-bold text-red-800 flex items-center mb-3" data-bs-toggle="tooltip" title="Estudiantes que abrieron un nuevo caso dentro del plazo de reincidencia configurado, tras haber cerrado uno anterior.">
+                            <i class="fa-solid fa-rotate-left text-red-500 me-2"></i>
+                            <span>Alertas de Reincidencia</span>
+                            <span class="ms-2 text-xs font-normal text-red-400">(≤ <span id="lbl-meses-reincidencia">6</span> meses tras cierre)</span>
+                        </h4>
+                        <div id="contenedor-reincidencias" class="space-y-1 text-xs max-h-56 overflow-y-auto"></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-100">
+                        <h4 class="text-sm font-bold text-amber-800 flex items-center mb-3" data-bs-toggle="tooltip" title="Capacitaciones del equipo cuya vigencia vence dentro de los próximos 60 días.">
+                            <i class="fa-solid fa-id-card-clip text-amber-500 me-2"></i>
+                            <span>Capacitaciones por Vencer (60 días)</span>
+                        </h4>
+                        <div id="contenedor-capacitaciones-vencer" class="space-y-1 text-xs max-h-56 overflow-y-auto"></div>
                     </div>
                 </div>
             </main>
@@ -285,7 +323,7 @@
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-500">Filtrar por Estado</label>
+                            <label class="form-label text-xs font-semibold text-slate-500" for="filter-estado">Filtrar por Estado</label>
                             <select id="filter-estado" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200">
                                 <option value="Todos">Todos los estados</option>
                                 <option value="Abierto">Abierto</option>
@@ -294,7 +332,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-500">Categoría</label>
+                            <label class="form-label text-xs font-semibold text-slate-500" for="filter-categoria">Categoría</label>
                             <select id="filter-categoria" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200">
                                 <option value="Todos">Todas las categorías</option>
                                 <option value="Convivencia Escolar">Convivencia Escolar</option>
@@ -305,15 +343,20 @@
                             </select>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-500">Responsable Principal</label>
+                            <label class="form-label text-xs font-semibold text-slate-500" for="filter-responsable">Responsable Principal</label>
                             <select id="filter-responsable" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200"></select>
                         </div>
                         <div class="flex items-end space-x-2">
                             <div class="w-full">
-                                <label class="form-label text-xs font-semibold text-slate-500">Buscar Estudiante</label>
+                                <label class="form-label text-xs font-semibold text-slate-500" for="filter-search">Buscar Estudiante</label>
                                 <input type="text" id="filter-search" oninput="Casos.renderTablaCasos()" placeholder="Nombre..." class="form-control form-control-sm border-slate-200">
                             </div>
                         </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="Casos.exportarPdfsZip()" class="btn btn-sm btn-outline-dark" data-bs-toggle="tooltip" title="Descarga un archivo ZIP con el PDF del expediente de cada caso que cumple los filtros aplicados arriba.">
+                            <i class="fa-solid fa-file-zipper me-1"></i> Exportar Expedientes Filtrados (ZIP)
+                        </button>
                     </div>
                 </div>
 
@@ -327,7 +370,7 @@
                                     <th class="border-0 px-4 py-3">Apertura</th>
                                     <th class="border-0 px-4 py-3">Días Activo</th>
                                     <th class="border-0 px-4 py-3">Responsable Principal</th>
-                                    <th class="border-0 px-4 py-3">Prioridad / Estado</th>
+                                    <th class="border-0 px-4 py-3">Estado / Urgencia</th>
                                     <th class="border-0 px-4 py-3 text-end">Acciones</th>
                                 </tr>
                             </thead>
@@ -343,7 +386,7 @@
                     <span><b>Sección Restringida:</b> Sólo un administrador del colegio puede modificar la configuración.</span>
                 </div>
                 <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 text-xs text-slate-600 flex gap-6">
-                    <span><b>RBD MINEDUC:</b> <span id="cfg-rbd">-</span></span>
+                    <span><b data-bs-toggle="tooltip" title="Rol Base de Datos: identificador oficial del establecimiento ante MINEDUC, usado en reportes formales.">RBD MINEDUC:</b> <span id="cfg-rbd">-</span></span>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div id="form-contenedor-config" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-fit">
@@ -354,13 +397,18 @@
                         </p>
                         <form id="form-config" onsubmit="Config.guardarConfiguracion(event)" class="space-y-3">
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Días sin actividad para alerta crítica *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="cfg-dias-alerta" data-bs-toggle="tooltip" title="Cantidad de días sin nueva bitácora tras los cuales el caso pasa a estado de alerta crítica.">Días sin actividad para alerta crítica *</label>
                                 <input type="number" id="cfg-dias-alerta" class="form-control form-control-sm" min="1" max="90" required>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Días de retención de casos cerrados *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="cfg-dias-retencion">Días de retención de casos cerrados *</label>
                                 <input type="number" id="cfg-dias-retencion" class="form-control form-control-sm" min="30" max="7300" required>
-                                <p class="text-[11px] text-slate-400 mt-1">Ley 19.628/21.719: tiempo que se conservan los expedientes cerrados antes de quedar elegibles para purga.</p>
+                                <p class="text-xs text-slate-400 mt-1">Ley 19.628/21.719: tiempo que se conservan los expedientes cerrados antes de quedar elegibles para purga.</p>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="cfg-meses-reincidencia" data-bs-toggle="tooltip" title="Si un estudiante reabre un caso dentro de este plazo tras cerrar uno anterior, se marca como reincidencia en el Dashboard.">Meses para alerta de reincidencia *</label>
+                                <input type="number" id="cfg-meses-reincidencia" class="form-control form-control-sm" min="1" max="36" required>
+                                <p class="text-xs text-slate-400 mt-1">Si un estudiante abre un nuevo caso dentro de este plazo tras cerrar uno anterior, se marca como reincidencia en el Dashboard.</p>
                             </div>
                             <button type="submit" class="btn btn-sm btn-primary bg-blue-800 border-0 w-full mt-2">Guardar Configuración</button>
                         </form>
@@ -369,13 +417,13 @@
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-fit">
                         <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-box-archive text-amber-600 me-2"></i>Retención y Purga de Datos</h4>
                         <div id="lista-purga" class="space-y-1 text-xs mb-2"></div>
-                        <button onclick="Config.purgarTodosElegibles()" class="btn btn-sm btn-outline-danger w-full">Purgar casos elegibles</button>
+                        <button onclick="Config.purgarTodosElegibles()" class="btn btn-sm btn-outline-danger w-full" data-bs-toggle="tooltip" title="Elimina permanentemente los expedientes cerrados que ya superaron el plazo de retención. Esta acción no se puede deshacer.">Purgar casos elegibles</button>
                     </div>
 
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-fit">
                         <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-bullseye text-purple-600 me-2"></i>Metas PME</h4>
                         <form id="form-meta-pme" onsubmit="Config.crearMetaPme(event)" class="space-y-2 mb-3">
-                            <select id="meta-indicador" class="form-select form-select-sm">
+                            <select id="meta-indicador" class="form-select form-select-sm" data-bs-toggle="tooltip" title="Indicador del Plan de Mejoramiento Educativo (PME) sobre el cual se fijará una meta a alcanzar.">
                                 <option value="Tasa de éxito de medidas aplicadas (%)">Tasa de éxito de medidas aplicadas (%)</option>
                                 <option value="Casos cerrados (%)">Casos cerrados (%)</option>
                                 <option value="Casos de Convivencia Escolar abiertos">Casos de Convivencia Escolar abiertos</option>
@@ -385,6 +433,89 @@
                             <button type="submit" class="btn btn-sm btn-outline-secondary w-full">Agregar Meta PME</button>
                         </form>
                         <div id="lista-metas-pme" class="space-y-1 text-xs"></div>
+                    </div>
+
+                    <div id="card-auditoria" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-3 hidden">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3">
+                            <i class="fa-solid fa-clipboard-list text-slate-500 me-2" data-bs-toggle="tooltip" title="Historial de acciones administrativas registradas en el sistema (solo visible para administradores)."></i>
+                            Registro de Auditoría
+                        </h4>
+                        <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                            <table class="table table-sm align-middle text-xs">
+                                <thead class="table-light">
+                                    <tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr>
+                                </thead>
+                                <tbody id="tabla-auditoria-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <main id="view-convivencia" class="p-6 space-y-6 hidden">
+                <div id="panel-bloqueo-convivencia" class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-xs text-amber-800 flex items-center space-x-2 hidden">
+                    <i class="fa-solid fa-lock text-base text-amber-600"></i>
+                    <span><b>Sección Restringida:</b> El catálogo de medidas y los protocolos personalizados solo pueden modificarlos los administradores. El usuario invitado no puede agregar actividades.</span>
+                </div>
+                <div id="form-contenedor-actividad" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <h4 class="text-sm font-bold text-slate-700 flex items-center">
+                            <i class="fa-solid fa-people-group text-teal-600 me-2" data-bs-toggle="tooltip" title="Talleres, charlas y otras acciones preventivas de convivencia escolar, distintas del calendario de plazos legales."></i>
+                            Actividades de Convivencia Escolar
+                        </h4>
+                        <div class="flex items-center gap-2">
+                            <select id="act-filtro-tipo" class="form-select form-select-sm" style="max-width:150px" onchange="Convivencia.filtrarActividades()">
+                                <option value="Todos">Todos los tipos</option>
+                                <option value="Taller">Taller</option>
+                                <option value="Charla">Charla</option>
+                                <option value="Capacitación">Capacitación</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                            <select id="act-filtro-estado" class="form-select form-select-sm" style="max-width:130px" onchange="Convivencia.filtrarActividades()">
+                                <option value="Todas">Todas</option>
+                                <option value="Abiertas">Abiertas</option>
+                                <option value="Cerradas">Cerradas</option>
+                            </select>
+                            <button id="btn-toggle-form-actividad" type="button" onclick="Convivencia.toggleFormActividad()" class="btn btn-sm btn-outline-secondary text-nowrap">
+                                <i class="fa-solid fa-plus me-1"></i>Nueva Actividad
+                            </button>
+                        </div>
+                    </div>
+                    <form id="form-actividad" onsubmit="Convivencia.crearActividad(event)" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                        <input type="text" id="act-nombre" class="form-control form-control-sm col-span-2" placeholder="Nombre de la actividad *" required>
+                        <select id="act-tipo" class="form-select form-select-sm">
+                            <option value="Taller">Taller</option>
+                            <option value="Charla">Charla</option>
+                            <option value="Capacitación">Capacitación</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                        <input type="date" id="act-fecha" class="form-control form-control-sm" required>
+                        <textarea id="act-descripcion" class="form-control form-control-sm col-span-2" rows="2" placeholder="Descripción (opcional)"></textarea>
+                        <div class="col-span-2 flex gap-2">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary flex-1">Agregar Actividad</button>
+                            <button type="button" onclick="Convivencia.toggleFormActividad()" class="btn btn-sm btn-secondary">Cancelar</button>
+                        </div>
+                    </form>
+                    <div id="lista-actividades" class="space-y-2 text-xs"></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-fit">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3">
+                            <i class="fa-solid fa-list-check text-orange-600 me-2" data-bs-toggle="tooltip" title="Estas medidas aparecen como opciones al registrar una Medida Reparatoria en la bitácora de un caso."></i>
+                            Catálogo de Medidas Reparatorias
+                        </h4>
+                        <form id="form-medida-catalogo" onsubmit="Convivencia.crearMedida(event)" class="flex gap-2 mb-3">
+                            <input type="text" id="medida-nombre" class="form-control form-control-sm" placeholder="Nueva medida reparatoria *" required>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary shrink-0">Agregar</button>
+                        </form>
+                        <div id="lista-medidas-catalogo" class="space-y-1 text-xs"></div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-fit">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-file-pen text-blue-600 me-2"></i>Protocolos de Actuación Personalizados</h4>
+                        <p class="text-xs text-slate-500 mb-2">Por defecto se usa el catálogo global de protocolos. Puedes personalizar los pasos para tu colegio en cualquier categoría.</p>
+                        <div id="lista-protocolos-colegio" class="space-y-2 text-xs"></div>
                     </div>
                 </div>
             </main>
@@ -400,15 +531,15 @@
                         <h4 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-user-plus text-blue-600 me-2"></i>Agregar Integrante</h4>
                         <form id="form-equipo" onsubmit="Equipo.agregarMiembroEquipo(event)" class="space-y-3">
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Nombre Completo *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="eq-nombre">Nombre Completo *</label>
                                 <input type="text" id="eq-nombre" class="form-control form-control-sm" required>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Rol Institucional *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="eq-rol">Rol Institucional *</label>
                                 <input type="text" id="eq-rol" class="form-control form-control-sm" required placeholder="Ej. Psicólogo Escolar">
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Especialidad (rol funcional)</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="eq-especialidad" data-bs-toggle="tooltip" title="Determina qué tipo de casos puede gestionar (ej. Psicólogo PIE ve campos NEE) y aparece en los selectores de derivación.">Especialidad (rol funcional)</label>
                                 <select class="form-select form-select-sm" id="eq-especialidad">
                                     <option value="">Sin especialidad</option>
                                     <option value="Encargado de Convivencia Escolar">Encargado de Convivencia Escolar</option>
@@ -418,25 +549,27 @@
                                     <option value="Orientador">Orientador</option>
                                     <option value="Otro">Otro</option>
                                 </select>
+                                <p class="text-xs text-slate-400 mt-1">Define qué tipo de casos puede gestionar (ej. Psicólogo PIE ve campos confidenciales NEE).</p>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Correo (para notificaciones)</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="eq-email">Correo (para notificaciones)</label>
                                 <input type="email" id="eq-email" class="form-control form-control-sm" placeholder="nombre@colegio.cl">
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Usuario para Iniciar Sesión</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="eq-username" data-bs-toggle="tooltip" title="El nombre de usuario que esta persona usará para iniciar sesión. Debe ser único en el colegio.">Usuario para Iniciar Sesión</label>
                                 <input type="text" id="eq-username" class="form-control form-control-sm" placeholder="Se genera automático si se deja vacío">
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Rol de Permisos *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="eq-rol-permiso" data-bs-toggle="tooltip" title="Define qué puede hacer dentro del sistema: Administrador gestiona equipo/configuración, Funcionario solo opera casos, Invitado solo puede ver.">Rol de Permisos *</label>
                                 <select class="form-select form-select-sm" id="eq-rol-permiso" required>
                                     <option value="funcionario">Funcionario (opera casos)</option>
                                     <option value="admin">Administrador (gestiona equipo y casos)</option>
                                     <option value="invitado">Invitado (solo lectura)</option>
                                 </select>
+                                <p class="text-xs text-slate-400 mt-1">Administrador: gestiona equipo y configuración. Funcionario: solo opera casos. Invitado: solo lectura.</p>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Contraseña Personal de Firma *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="eq-password">Contraseña Personal de Firma *</label>
                                 <input type="password" id="eq-password" class="form-control form-control-sm" required placeholder="Clave de operaciones">
                             </div>
                             <button type="submit" class="btn btn-sm btn-primary bg-blue-800 border-0 w-full mt-2">Habilitar Integrante</button>
@@ -513,60 +646,71 @@
                                     <span class="text-xs font-mono text-slate-400" id="det-id">CASO FOLIO #000</span>
                                     <h3 class="text-lg font-bold text-slate-900 mt-1" id="det-estudiante">-</h3>
                                 </div>
-                                <span id="det-badge-estado" class="badge status-badge bg-warning text-dark text-xs">Estado</span>
+                                <span id="det-badge-estado" class="badge status-badge bg-amber-600 text-white text-xs">Estado</span>
+                            </div>
+
+                            <div id="det-estudiantes-adicionales-wrap" class="hidden">
+                                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase d-block">Otros Estudiantes Involucrados</span>
+                                <div id="det-estudiantes-adicionales-lista" class="flex flex-wrap gap-1 mt-1"></div>
+                            </div>
+                            <div id="form-estudiante-adicional-wrap" class="no-print">
+                                <div class="flex gap-1">
+                                    <input type="text" id="det-nuevo-estudiante-adicional" class="form-control form-control-sm" placeholder="Agregar otro estudiante involucrado">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="Casos.agregarEstudianteAdicionalDetalle()">Agregar</button>
+                                </div>
                             </div>
 
                             <div class="mt-4">
-                                <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Categoría del Problema</label>
+                                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase d-block">Categoría del Problema</span>
                                 <p class="text-xs font-medium text-slate-700 mt-1" id="det-categoria">-</p>
                             </div>
 
                             <div class="mt-4">
-                                <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Hechos Denunciados / Descripción</label>
+                                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase d-block">Hechos Denunciados / Descripción</span>
                                 <p class="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-200 mt-1 leading-relaxed" id="det-descripcion">-</p>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                                 <div>
-                                    <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Apertura</label>
+                                    <span class="text-xs font-bold tracking-wider text-slate-400 uppercase d-block">Apertura</span>
                                     <p class="text-xs font-medium text-slate-700 mt-1" id="det-fecha-apertural">-</p>
                                 </div>
                                 <div>
-                                    <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Permanencia</label>
+                                    <span class="text-xs font-bold tracking-wider text-slate-400 uppercase d-block">Permanencia</span>
                                     <p class="text-xs font-medium text-slate-700 mt-1" id="det-dias-abierto">-</p>
                                 </div>
                             </div>
 
                             <div class="mt-4">
-                                <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase mb-1 block">Responsable Asignado</label>
+                                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1 block">Responsable Asignado</span>
                                 <div class="p-2 bg-blue-50/50 rounded text-xs font-semibold text-blue-900" id="det-resp-principal">-</div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                                 <div>
-                                    <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Curso</label>
+                                    <span class="text-xs font-bold tracking-wider text-slate-400 uppercase d-block">Curso</span>
                                     <p class="text-xs font-medium text-slate-700 mt-1" id="det-curso">-</p>
                                 </div>
                                 <div id="det-pie-wrap" class="hidden">
-                                    <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">PIE / NEE</label>
+                                    <span class="text-xs font-bold tracking-wider text-slate-400 uppercase d-block">PIE / NEE</span>
                                     <p class="text-xs font-medium text-purple-700 mt-1">Sí <span id="det-pie-diagnostico" class="block text-slate-500 font-normal"></span></p>
                                 </div>
                             </div>
                             <div id="det-junaeb-wrap" class="mt-4 hidden">
-                                <label class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Beneficios JUNAEB</label>
+                                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase d-block">Beneficios JUNAEB</span>
                                 <p class="text-xs font-medium text-slate-700 mt-1" id="det-junaeb">-</p>
                             </div>
                         </div>
 
                         <div id="panel-operacional-acciones" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-2 no-print">
                             <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Acciones Rápidas</h4>
-                            <button onclick="Bitacora.openModalAccion('entrevista')" class="btn btn-sm btn-outline-primary w-full text-left flex items-center justify-between py-2 text-xs">
+                            <button onclick="Bitacora.openModalAccion('entrevista')" class="btn btn-sm btn-outline-primary border-blue-400 text-blue-700 hover:bg-blue-50 w-full text-left flex items-center justify-between py-2 text-xs">
                                 <span><i class="fa-solid fa-comments me-2 text-blue-500"></i> Registrar Entrevista</span>
                             </button>
-                            <button onclick="Bitacora.openModalAccion('seguimiento')" class="btn btn-sm btn-outline-primary w-full text-left flex items-center justify-between py-2 text-xs">
+                            <button onclick="Bitacora.openModalAccion('seguimiento')" class="btn btn-sm btn-outline-primary border-amber-400 text-amber-700 hover:bg-amber-50 w-full text-left flex items-center justify-between py-2 text-xs">
                                 <span><i class="fa-solid fa-magnifying-glass-chart me-2 text-amber-500"></i> Bitácora de Seguimiento</span>
                             </button>
-                            <button onclick="Bitacora.openModalAccion('medida')" class="btn btn-sm btn-outline-primary w-full text-left flex items-center justify-between py-2 text-xs">
+                            <button onclick="Bitacora.openModalAccion('medida')" class="btn btn-sm btn-outline-primary border-purple-400 text-purple-700 hover:bg-purple-50 w-full text-left flex items-center justify-between py-2 text-xs">
                                 <span><i class="fa-solid fa-gavel me-2 text-purple-500"></i> Aplicar Medida Reparatoria</span>
                             </button>
                             <button id="btn-accion-cerrar" onclick="Casos.openModalCierre()" class="btn btn-sm btn-danger w-full py-2 mt-4 bg-red-600 border-0 text-xs font-semibold">
@@ -575,84 +719,81 @@
                         </div>
                     </div>
 
-                    <div id="seccion-bitacora-reporte" class="lg:col-span-2">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
-                            <h4 class="text-sm font-bold text-slate-800 pb-2 border-b flex items-center">
-                                <i class="fa-solid fa-clock-rotate-left text-slate-400 me-2 no-print"></i>
-                                <span>Cuerpo de Bitácora Cronológica Oficial</span>
-                            </h4>
-                            <div id="timeline-container" class="mt-4"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-list-check text-blue-600 me-2 no-print"></i>Protocolo de Actuación</h4>
-                        <p class="text-[11px] text-slate-400 mb-2" id="det-protocolo-normativa"></p>
-                        <div id="lista-pasos-protocolo" class="space-y-1 text-xs"></div>
-                    </div>
-
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-people-arrows text-amber-600 me-2 no-print"></i>Derivaciones Externas</h4>
-                        <form id="form-derivacion" onsubmit="Casos.crearDerivacion(event)" class="grid grid-cols-2 gap-2 mb-3 no-print">
-                            <select id="der-institucion" class="form-select form-select-sm">
-                                <option>Carabineros</option>
-                                <option>PDI</option>
-                                <option>Fiscalía</option>
-                                <option>Tribunal de Familia</option>
-                                <option>OPD</option>
-                                <option>Mejor Niñez (ex-SENAME)</option>
-                                <option>COSAM</option>
-                                <option>Hospital / Centro de Salud</option>
-                                <option>Otro</option>
-                            </select>
-                            <select id="der-tipo" class="form-select form-select-sm">
-                                <option>Denuncia Obligatoria</option>
-                                <option>Derivación de Apoyo</option>
-                            </select>
-                            <input type="date" id="der-fecha" class="form-control form-control-sm" required>
-                            <input type="text" id="der-folio" class="form-control form-control-sm" placeholder="Folio externo (opcional)">
-                            <textarea id="der-notas" class="form-control form-control-sm col-span-2" rows="2" placeholder="Notas (opcional)"></textarea>
-                            <button type="submit" class="btn btn-sm btn-outline-secondary col-span-2">Registrar Derivación</button>
-                        </form>
-                        <div id="lista-derivaciones" class="space-y-1 text-xs"></div>
-                    </div>
-
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-signature text-teal-600 me-2 no-print"></i>Firmas Electrónicas Simples</h4>
-                        <form id="form-firma" onsubmit="Casos.crearFirma(event)" class="grid grid-cols-2 gap-2 mb-3 no-print">
-                            <select id="firma-tipo-documento" class="form-select form-select-sm col-span-2">
-                                <option value="Citación">Citación de Apoderado</option>
-                                <option value="Acuerdo Reparatorio">Acuerdo Reparatorio</option>
-                                <option value="Cierre">Cierre de Expediente</option>
-                            </select>
-                            <input type="text" id="firma-nombre" class="form-control form-control-sm" placeholder="Nombre firmante" required>
-                            <input type="text" id="firma-rut" class="form-control form-control-sm" placeholder="RUT firmante" required>
-                            <button type="submit" class="btn btn-sm btn-outline-secondary col-span-2">Registrar Firma</button>
-                        </form>
-                        <div id="lista-firmas" class="space-y-1 text-xs"></div>
-                    </div>
-
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 no-print">
-                        <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-comment-sms text-green-600 me-2"></i>Notificar Apoderado</h4>
-                        <form id="form-notificar" onsubmit="Casos.notificarApoderado(event)" class="space-y-2">
-                            <div class="grid grid-cols-2 gap-2">
-                                <select id="not-canal" class="form-select form-select-sm">
-                                    <option value="whatsapp">WhatsApp</option>
-                                    <option value="sms">SMS</option>
-                                    <option value="email">Correo</option>
-                                </select>
-                                <select id="not-idioma" class="form-select form-select-sm" onchange="Casos.actualizarPlantillaNotificacion()">
-                                    <option value="es">Español</option>
-                                    <option value="es-simple">Español simple</option>
-                                    <option value="ht">Kreyòl ayisyen</option>
-                                </select>
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                        <ul class="nav nav-tabs px-3 pt-2 no-print" id="tabs-detalle-caso" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-bitacora" type="button" role="tab">
+                                    <i class="fa-solid fa-clock-rotate-left me-1"></i> Bitácora <span class="badge bg-slate-200 text-slate-700 ms-1" id="tab-badge-bitacora">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-protocolo" type="button" role="tab">
+                                    <i class="fa-solid fa-list-check me-1"></i> Protocolo <span class="badge bg-slate-200 text-slate-700 ms-1" id="tab-badge-protocolo">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-derivaciones" type="button" role="tab">
+                                    <i class="fa-solid fa-people-arrows me-1"></i> Derivaciones <span class="badge bg-slate-200 text-slate-700 ms-1" id="tab-badge-derivaciones">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-mediaciones" type="button" role="tab">
+                                    <i class="fa-solid fa-handshake me-1"></i> Mediaciones <span class="badge bg-slate-200 text-slate-700 ms-1" id="tab-badge-mediaciones">0</span>
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content p-4" id="seccion-bitacora-reporte">
+                            <div class="tab-pane fade show active" id="tab-bitacora" role="tabpanel">
+                                <h4 class="text-sm font-bold text-slate-800 pb-2 border-b flex items-center">
+                                    <i class="fa-solid fa-clock-rotate-left text-slate-400 me-2 no-print"></i>
+                                    <span>Cuerpo de Bitácora Cronológica Oficial</span>
+                                </h4>
+                                <div id="timeline-container" class="mt-4"></div>
                             </div>
-                            <input type="text" id="not-destinatario" class="form-control form-control-sm" placeholder="Teléfono o correo del apoderado" required>
-                            <textarea id="not-mensaje" class="form-control form-control-sm" rows="3" required></textarea>
-                            <button type="submit" class="btn btn-sm btn-outline-secondary w-full">Enviar Notificación</button>
-                        </form>
+
+                            <div class="tab-pane fade" id="tab-protocolo" role="tabpanel">
+                                <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-list-check text-blue-600 me-2 no-print"></i>Protocolo de Actuación</h4>
+                                <p class="text-xs text-slate-400 mb-2" id="det-protocolo-normativa"></p>
+                                <div id="lista-pasos-protocolo" class="space-y-1 text-xs"></div>
+                            </div>
+
+                            <div class="tab-pane fade" id="tab-derivaciones" role="tabpanel">
+                                <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-people-arrows text-amber-600 me-2 no-print"></i>Derivaciones Externas</h4>
+                                <form id="form-derivacion" onsubmit="Casos.crearDerivacion(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 no-print">
+                                    <select id="der-institucion" class="form-select form-select-sm">
+                                        <option>Carabineros</option>
+                                        <option>PDI</option>
+                                        <option>Fiscalía</option>
+                                        <option>Tribunal de Familia</option>
+                                        <option>OLN (Oficina Local de la Niñez)</option>
+                                        <option>Mejor Niñez (ex-SENAME)</option>
+                                        <option>COSAM</option>
+                                        <option>Hospital / Centro de Salud</option>
+                                        <option>Otro</option>
+                                    </select>
+                                    <select id="der-tipo" class="form-select form-select-sm">
+                                        <option>Denuncia Obligatoria</option>
+                                        <option>Derivación de Apoyo</option>
+                                    </select>
+                                    <input type="date" id="der-fecha" class="form-control form-control-sm" required>
+                                    <input type="text" id="der-folio" class="form-control form-control-sm" placeholder="Folio externo (opcional)">
+                                    <textarea id="der-notas" class="form-control form-control-sm col-span-2" rows="2" placeholder="Notas (opcional)"></textarea>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary col-span-2">Registrar Derivación</button>
+                                </form>
+                                <div id="lista-derivaciones" class="space-y-1 text-xs"></div>
+                            </div>
+
+                            <div class="tab-pane fade" id="tab-mediaciones" role="tabpanel">
+                                <h4 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-handshake text-indigo-600 me-2 no-print"></i>Actas de Mediación Escolar</h4>
+                                <form id="form-mediacion" onsubmit="Mediaciones.crearActa(event)" class="space-y-2 mb-3 no-print">
+                                    <input type="date" id="med-fecha" class="form-control form-control-sm" required>
+                                    <input type="text" id="med-participantes" class="form-control form-control-sm" placeholder="Participantes (nombres)" required>
+                                    <textarea id="med-acuerdo" class="form-control form-control-sm" rows="2" placeholder="Acuerdo alcanzado" required></textarea>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary w-full">Registrar Acta de Mediación</button>
+                                </form>
+                                <div id="lista-mediaciones" class="space-y-2 text-xs"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -662,7 +803,7 @@
     <div class="modal fade" id="modalCitacion" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-xl">
-                <div class="modal-header bg-blue-900 text-white py-3">
+                <div class="modal-header bg-blue-800 text-white py-3">
                     <h5 class="modal-title text-sm font-bold"><i class="fa-solid fa-paper-plane me-2"></i> Documento Oficial de Citación</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -677,9 +818,9 @@
     </div>
 
     <div class="modal fade" id="modalApertura" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content border-0 shadow-lg rounded-xl">
-                <div class="modal-header bg-slate-900 text-white py-3">
+                <div class="modal-header bg-blue-800 text-white py-3">
                     <h5 class="modal-title text-base font-bold">Apertura de Nuevo Caso</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -687,17 +828,25 @@
                     <div class="modal-body p-4 space-y-3">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Estudiante Involucrado *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-estudiante" data-bs-toggle="tooltip" title="Si el caso involucra a más de un estudiante (ej. una pelea), agrega a los demás abajo en 'Otros estudiantes involucrados'.">Estudiante Principal *</label>
                                 <input type="text" class="form-control form-control-sm" id="in-estudiante" required>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Fecha de Apertura *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-fecha">Fecha de Apertura *</label>
                                 <input type="date" class="form-control form-control-sm" id="in-fecha" required>
                             </div>
                         </div>
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600">Otros estudiantes involucrados (opcional)</label>
+                            <div class="flex gap-2">
+                                <input type="text" class="form-control form-control-sm" id="in-estudiante-adicional" placeholder="Nombre del estudiante" onkeydown="if(event.key==='Enter'){event.preventDefault();Casos.agregarChipEstudianteAdicional();}">
+                                <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="Casos.agregarChipEstudianteAdicional()">Agregar</button>
+                            </div>
+                            <div id="chips-estudiantes-adicionales" class="flex flex-wrap gap-1 mt-2"></div>
+                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Categoría del Caso *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-categoria">Categoría del Caso *</label>
                                 <select class="form-select form-select-sm" id="in-categoria" required>
                                     <option value="Convivencia Escolar">Convivencia Escolar</option>
                                     <option value="Académico / Rendimiento">Académico / Rendimiento</option>
@@ -707,30 +856,30 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Responsable Principal *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-responsable">Responsable Principal *</label>
                                 <select class="form-select form-select-sm selector-dinamico-equipo" id="in-responsable" required></select>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Curso</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-curso">Curso</label>
                                 <input type="text" class="form-control form-control-sm" id="in-curso" placeholder="Ej. 5ºA">
                             </div>
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Beneficios JUNAEB</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-junaeb">Beneficios JUNAEB</label>
                                 <input type="text" class="form-control form-control-sm" id="in-junaeb" placeholder="Ej. Beca BARE, PAE">
                             </div>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-bold text-slate-600">Descripción Inicial del Caso *</label>
+                            <label class="form-label text-xs font-bold text-slate-600" for="in-descripcion">Descripción Inicial del Caso *</label>
                             <textarea class="form-control form-control-sm" id="in-descripcion" rows="3" required></textarea>
                         </div>
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="in-tiene-nee" onchange="document.getElementById('campo-diagnostico-pie').classList.toggle('hidden', !this.checked)">
-                            <label class="form-check-label text-xs font-bold text-slate-600" for="in-tiene-nee">Estudiante con NEE (Programa de Integración Escolar)</label>
+                            <label class="form-check-label text-xs font-bold text-slate-600" for="in-tiene-nee" data-bs-toggle="tooltip" title="Necesidades Educativas Especiales: marca este caso para que aparezca el campo confidencial de diagnóstico PIE.">Estudiante con NEE (Programa de Integración Escolar)</label>
                         </div>
                         <div id="campo-diagnostico-pie" class="hidden">
-                            <label class="form-label text-xs font-bold text-slate-600">Diagnóstico PIE <span class="text-amber-600">(información confidencial)</span></label>
+                            <label class="form-label text-xs font-bold text-slate-600" for="in-diagnostico-pie">Diagnóstico PIE <span class="text-amber-600">(información confidencial)</span></label>
                             <textarea class="form-control form-control-sm" id="in-diagnostico-pie" rows="2" placeholder="Visible solo para Administradores y Psicólogo PIE"></textarea>
                         </div>
                     </div>
@@ -744,7 +893,7 @@
     </div>
 
     <div class="modal fade" id="modalAccionBitacora" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-dialog modal-md modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content border-0 shadow-lg rounded-xl">
                 <div class="modal-header text-white py-3" id="modal-accion-header">
                     <h5 class="modal-title text-sm font-bold" id="modal-accion-titulo">Registrar Entrada</h5>
@@ -753,19 +902,19 @@
                 <form id="form-accion-bitacora" onsubmit="Bitacora.guardarAccionBitacora(event)">
                     <input type="hidden" id="in-accion-tipo">
                     <div class="modal-body p-4 space-y-3">
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Fecha de Ejecución *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-accion-fecha">Fecha de Ejecución *</label>
                                 <input type="date" class="form-control form-control-sm" id="in-accion-fecha" required>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Operador Logueado Firma *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-accion-operador-label">Operador Logueado Firma *</label>
                                 <input type="text" id="in-accion-operador-label" class="form-control form-control-sm bg-slate-100" readonly>
                             </div>
                         </div>
                         <div id="campos-entrevista" class="hidden space-y-2">
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Tipo de Entrevistado *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-entrevista-tipo">Tipo de Entrevistado *</label>
                                 <select class="form-select form-select-sm" id="in-entrevista-tipo" onchange="document.getElementById('campo-entrevista-otro').classList.toggle('hidden', this.value !== 'Otro')">
                                     <option value="Estudiante">Estudiante Involucrado</option>
                                     <option value="Apoderado / Tutor">Apoderado / Tutor Legal</option>
@@ -773,7 +922,7 @@
                                 </select>
                             </div>
                             <div id="campo-entrevista-otro" class="hidden">
-                                <label class="form-label text-xs font-bold text-slate-600">¿Quién es? *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-entrevista-otro-nombre">¿Quién es? *</label>
                                 <input type="text" class="form-control form-control-sm" id="in-entrevista-otro-nombre" maxlength="100" placeholder="Nombre y relación con el estudiante (ej. Tío, Profesor de Educación Física)">
                             </div>
                             <div class="form-check">
@@ -781,12 +930,12 @@
                                 <label class="form-check-label text-xs font-bold text-slate-600" for="in-consentimiento">Se cuenta con consentimiento informado del apoderado para entrevistar al menor</label>
                             </div>
                             <div id="campo-justificacion-consentimiento" class="hidden">
-                                <label class="form-label text-xs font-bold text-slate-600">Justificación (interés superior del niño)</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-justificacion-consentimiento">Justificación (interés superior del niño)</label>
                                 <textarea class="form-control form-control-sm" id="in-justificacion-consentimiento" rows="2" placeholder="Motivo por el cual se entrevista sin consentimiento previo"></textarea>
                             </div>
                         </div>
                         <div id="campos-medida" class="hidden">
-                            <label class="form-label text-xs font-bold text-slate-600">Tipo / Estado de Medida Aplicada *</label>
+                            <label class="form-label text-xs font-bold text-slate-600" for="in-medida-estado">Tipo / Estado de Medida Aplicada *</label>
                             <select class="form-select form-select-sm" id="in-medida-estado">
                                 <option value="Compromiso de Mediación">Compromiso de Mediación Estudiantil</option>
                                 <option value="Derivación Psicológica">Derivación Psicológica Interna</option>
@@ -794,11 +943,11 @@
                             </select>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-bold text-slate-600" id="lbl-accion-descripcion">Observaciones *</label>
+                            <label class="form-label text-xs font-bold text-slate-600" id="lbl-accion-descripcion" for="in-accion-desc">Observaciones *</label>
                             <textarea class="form-control form-control-sm" id="in-accion-desc" rows="4" required></textarea>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-bold text-slate-600">Adjuntar archivo (opcional)</label>
+                            <label class="form-label text-xs font-bold text-slate-600" for="in-accion-adjunto">Adjuntar archivo (opcional)</label>
                             <input type="file" class="form-control form-control-sm" id="in-accion-adjunto">
                         </div>
                     </div>
@@ -820,18 +969,18 @@
                 </div>
                 <form id="form-cierre-caso" onsubmit="Casos.guardarCierreCaso(event)">
                     <div class="modal-body p-4 space-y-3">
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Fecha de Cierre *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-cierre-fecha">Fecha de Cierre *</label>
                                 <input type="date" class="form-control form-control-sm" id="in-cierre-fecha" required>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-bold text-slate-600">Autorizador Logueado *</label>
+                                <label class="form-label text-xs font-bold text-slate-600" for="in-cierre-operador-label">Autorizador Logueado *</label>
                                 <input type="text" id="in-cierre-operador-label" class="form-control form-control-sm bg-slate-100" readonly>
                             </div>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-bold text-slate-600">Resolución Final *</label>
+                            <label class="form-label text-xs font-bold text-slate-600" for="in-cierre-motivo">Resolución Final *</label>
                             <select class="form-select form-select-sm" id="in-cierre-motivo" required>
                                 <option value="Exitosa sin Reincidencia">Resolución Exitosa (Cumplimiento sin Reincidencias)</option>
                                 <option value="Derivado Externo">Derivación Externa Efectiva</option>
@@ -839,7 +988,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-bold text-slate-600">Evaluación Final del Caso *</label>
+                            <label class="form-label text-xs font-bold text-slate-600" for="in-cierre-evaluacion">Evaluación Final del Caso *</label>
                             <textarea class="form-control form-control-sm" id="in-cierre-evaluacion" rows="4" required></textarea>
                         </div>
                     </div>
@@ -852,10 +1001,38 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalCerrarActividad" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-red-700 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold">Cierre de Actividad</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-cierre-actividad" onsubmit="Convivencia.guardarCierreActividad(event)">
+                    <input type="hidden" id="cierre-act-id">
+                    <div class="modal-body p-4 space-y-3">
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600" for="cierre-act-fecha">Fecha de Cierre *</label>
+                            <input type="date" class="form-control form-control-sm" id="cierre-act-fecha" required>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-bold text-slate-600" for="cierre-act-evaluacion">Evaluación Final de la Actividad *</label>
+                            <textarea class="form-control form-control-sm" id="cierre-act-evaluacion" rows="4" required placeholder="Resultados, asistencia, observaciones..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-danger bg-red-700 border-0">Cerrar Actividad</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modalEditarSostenedor" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-xl">
-                <div class="modal-header bg-purple-700 text-white py-3">
+                <div class="modal-header bg-slate-800 text-white py-3">
                     <h5 class="modal-title text-sm font-bold">Editar Sostenedor</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -863,11 +1040,11 @@
                     <input type="hidden" id="edsost-id">
                     <div class="modal-body p-4 space-y-3">
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-600">Nombre *</label>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="edsost-nombre">Nombre *</label>
                             <input type="text" id="edsost-nombre" class="form-control form-control-sm" required>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-600">RUT</label>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="edsost-rut">RUT</label>
                             <input type="text" id="edsost-rut" class="form-control form-control-sm">
                         </div>
                     </div>
@@ -881,9 +1058,9 @@
     </div>
 
     <div class="modal fade" id="modalEditarColegio" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-dialog modal-md modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content border-0 shadow-lg rounded-xl">
-                <div class="modal-header bg-blue-900 text-white py-3">
+                <div class="modal-header bg-slate-800 text-white py-3">
                     <h5 class="modal-title text-sm font-bold">Editar Colegio</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -891,34 +1068,34 @@
                     <input type="hidden" id="edcol-id">
                     <div class="modal-body p-4 space-y-3">
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-600">Nombre *</label>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="edcol-nombre">Nombre *</label>
                             <input type="text" id="edcol-nombre" class="form-control form-control-sm" required>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">RBD (MINEDUC)</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="edcol-rbd">RBD (MINEDUC)</label>
                                 <input type="text" id="edcol-rbd" class="form-control form-control-sm">
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Sostenedor</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="edcol-sostenedor">Sostenedor</label>
                                 <select id="edcol-sostenedor" class="form-select form-select-sm">
                                     <option value="">Sin sostenedor asignado</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Comuna</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="edcol-comuna">Comuna</label>
                                 <input type="text" id="edcol-comuna" class="form-control form-control-sm">
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Dirección</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="edcol-direccion">Dirección</label>
                                 <input type="text" id="edcol-direccion" class="form-control form-control-sm">
                             </div>
                         </div>
                         <hr class="my-2">
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-600 d-block">Logo del Colegio (opcional)</label>
+                            <label class="form-label text-xs font-semibold text-slate-600 d-block" for="edcol-logo-file" data-bs-toggle="tooltip" title="Se mostrará pequeño en el pie de la barra lateral cuando alguien inicie sesión en este colegio.">Logo del Colegio (opcional)</label>
                             <div class="flex items-center gap-3">
                                 <img id="edcol-logo-preview" class="hidden border border-slate-200 rounded bg-white" style="max-height:48px;max-width:120px;object-fit:contain" alt="Logo actual">
                                 <span id="edcol-logo-vacio" class="text-xs text-slate-400 italic">Sin logo cargado</span>
@@ -939,7 +1116,7 @@
     <div class="modal fade" id="modalEditarEquipo" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-xl">
-                <div class="modal-header bg-slate-900 text-white py-3">
+                <div class="modal-header bg-slate-800 text-white py-3">
                     <h5 class="modal-title text-sm font-bold">Editar Integrante</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -947,16 +1124,16 @@
                     <input type="hidden" id="edeq-id">
                     <div class="modal-body p-4 space-y-3">
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-600">Nombre Completo *</label>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="edeq-nombre">Nombre Completo *</label>
                             <input type="text" id="edeq-nombre" class="form-control form-control-sm" required>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-600">Rol Institucional *</label>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="edeq-rol">Rol Institucional *</label>
                             <input type="text" id="edeq-rol" class="form-control form-control-sm" required>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Especialidad</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="edeq-especialidad">Especialidad</label>
                                 <select class="form-select form-select-sm" id="edeq-especialidad">
                                     <option value="">Sin especialidad</option>
                                     <option value="Encargado de Convivencia Escolar">Encargado de Convivencia Escolar</option>
@@ -968,7 +1145,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Rol de Permisos *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="edeq-rol-permiso">Rol de Permisos *</label>
                                 <select class="form-select form-select-sm" id="edeq-rol-permiso" required>
                                     <option value="funcionario">Funcionario</option>
                                     <option value="admin">Administrador</option>
@@ -977,16 +1154,16 @@
                             </div>
                         </div>
                         <div>
-                            <label class="form-label text-xs font-semibold text-slate-600">Correo</label>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="edeq-email">Correo</label>
                             <input type="email" id="edeq-email" class="form-control form-control-sm">
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Usuario para Iniciar Sesión *</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="edeq-username">Usuario para Iniciar Sesión *</label>
                                 <input type="text" id="edeq-username" class="form-control form-control-sm" required>
                             </div>
                             <div>
-                                <label class="form-label text-xs font-semibold text-slate-600">Nueva Contraseña</label>
+                                <label class="form-label text-xs font-semibold text-slate-600" for="edeq-password">Nueva Contraseña</label>
                                 <input type="password" id="edeq-password" class="form-control form-control-sm" placeholder="Dejar en blanco para no cambiar">
                             </div>
                         </div>
@@ -996,6 +1173,70 @@
                         <button type="submit" class="btn btn-sm btn-primary bg-slate-800 border-0">Guardar Cambios</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalProtocoloColegio" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-slate-800 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold">Personalizar Protocolo — <span id="prot-categoria-label"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-protocolo-colegio" onsubmit="Convivencia.guardarProtocolo(event)">
+                    <input type="hidden" id="prot-categoria">
+                    <div class="modal-body p-4 space-y-3">
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="prot-nombre">Nombre del protocolo *</label>
+                            <input type="text" id="prot-nombre" class="form-control form-control-sm" required>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="prot-normativa">Normativa de referencia</label>
+                            <input type="text" id="prot-normativa" class="form-control form-control-sm">
+                        </div>
+                        <div>
+                            <label class="form-label text-xs font-semibold text-slate-600" for="prot-pasos">Pasos (uno por línea, formato "Descripción | plazo en días") *</label>
+                            <textarea id="prot-pasos" class="form-control form-control-sm font-mono" rows="8" required></textarea>
+                            <p class="text-xs text-slate-400 mt-1">Ejemplo: Entrevista inicial con el estudiante | 2</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-slate-50 border-0 py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-primary bg-blue-800 border-0">Guardar Personalización</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCapacitaciones" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-blue-800 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold">Capacitaciones de <span id="cap-nombre-usuario"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 space-y-3">
+                    <input type="hidden" id="cap-usuario-id">
+                    <div id="cap-form-contenedor">
+                        <form id="form-capacitacion" onsubmit="Capacitaciones.crear(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input type="text" id="cap-nombre" class="form-control form-control-sm col-span-2" placeholder="Nombre de la capacitación *" required>
+                            <input type="text" id="cap-institucion" class="form-control form-control-sm col-span-2" placeholder="Institución que la otorga (opcional)">
+                            <div>
+                                <label class="form-label text-xs text-slate-500" for="cap-fecha-obtencion">Fecha de obtención *</label>
+                                <input type="date" id="cap-fecha-obtencion" class="form-control form-control-sm" required>
+                            </div>
+                            <div>
+                                <label class="form-label text-xs text-slate-500" for="cap-fecha-vencimiento">Fecha de vencimiento</label>
+                                <input type="date" id="cap-fecha-vencimiento" class="form-control form-control-sm">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary col-span-2">Agregar Capacitación</button>
+                        </form>
+                        <hr>
+                    </div>
+                    <div id="lista-capacitaciones" class="space-y-1 text-xs"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1013,7 +1254,7 @@
                         <p class="text-xs text-slate-600">Este integrante tiene casos asignados. Elige a quién se traspasarán antes de removerlo del equipo. La reasignación quedará registrada en la bitácora de cada caso.</p>
                         <div id="reas-lista-casos" class="text-xs bg-slate-50 border border-slate-200 rounded p-2 space-y-1 max-h-32 overflow-y-auto"></div>
                         <div>
-                            <label class="form-label text-xs font-bold text-slate-600">Nuevo Responsable *</label>
+                            <label class="form-label text-xs font-bold text-slate-600" for="reas-nuevo-responsable">Nuevo Responsable *</label>
                             <select id="reas-nuevo-responsable" class="form-select form-select-sm" required></select>
                         </div>
                     </div>
@@ -1022,6 +1263,24 @@
                         <button type="submit" class="btn btn-sm btn-danger bg-red-700 border-0">Reasignar y Remover</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalConfirmar" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-xl">
+                <div class="modal-header bg-red-700 text-white py-3">
+                    <h5 class="modal-title text-sm font-bold" id="confirmar-titulo">Confirmar acción</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="App.resolverConfirmar(false)"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-xs text-slate-600 mb-0" id="confirmar-mensaje"></p>
+                </div>
+                <div class="modal-footer bg-slate-50 border-0 py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="App.resolverConfirmar(false)">Cancelar</button>
+                    <button type="button" class="btn btn-sm btn-danger bg-red-700 border-0" id="confirmar-btn-aceptar" onclick="App.resolverConfirmar(true)">Confirmar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1035,6 +1294,9 @@
     <script src="/js/dashboard.js"></script>
     <script src="/js/casos.js"></script>
     <script src="/js/bitacora.js"></script>
+    <script src="/js/mediaciones.js"></script>
+    <script src="/js/capacitaciones.js"></script>
+    <script src="/js/convivencia.js"></script>
     <script src="/js/equipo.js"></script>
     <script src="/js/config.js"></script>
     <script src="/js/offline.js"></script>

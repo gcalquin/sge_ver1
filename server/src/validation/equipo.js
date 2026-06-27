@@ -40,4 +40,18 @@ const eliminarUsuarioSchema = z.object({
     nuevoResponsableId: z.coerce.number().int().positive().optional(),
 });
 
-module.exports = { crearUsuarioColegioSchema, actualizarUsuarioColegioSchema, eliminarUsuarioSchema };
+const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida, usa AAAA-MM-DD.");
+
+const capacitacionSchema = z.object({
+    nombre: z.string().min(2).max(200),
+    institucion: z.string().max(150).optional().nullable(),
+    fechaObtencion: fechaSchema,
+    fechaVencimiento: fechaSchema.optional().nullable(),
+});
+
+module.exports = {
+    crearUsuarioColegioSchema,
+    actualizarUsuarioColegioSchema,
+    eliminarUsuarioSchema,
+    capacitacionSchema,
+};

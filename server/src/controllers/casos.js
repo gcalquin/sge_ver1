@@ -1,11 +1,23 @@
 const PDFDocument = require("pdfkit");
+const archiver = require("archiver");
 const { pool } = require("../config/db");
 const { asyncHandler } = require("../utils/asyncHandler");
 const { calcularHash } = require("../utils/hash");
 const { enviarCorreo } = require("../config/mailer");
-const { enviarWhatsapp, enviarSms } = require("../config/whatsapp");
+const { obtenerMediacionesDeCaso } = require("./mediaciones");
+const { listarProximasAVencer } = require("./capacitaciones");
+const { obtenerPasosProtocoloEfectivo } = require("./convivencia");
 
 const TIPO_BITACORA = { entrevista: "Entrevista", seguimiento: "Seguimiento", medida: "Medida" };
+
+// Construye un fragmento SQL que convierte un parámetro de búsqueda libre (que
+// puede tener varias palabras, ej. un nombre completo) en un tsquery válido con
+// coincidencia por prefijo en cada palabra ("ana maria" -> "ana:* & maria:*").
+// to_tsquery() no acepta texto plano con espacios, por eso no se le puede pasar
+// el parámetro tal cual + ':*' cuando tiene más de una palabra.
+function tsQueryBusqueda(param) {
+    return `regexp_replace(trim(inmutable_unaccent(${param})), '\\s+', ':* & ', 'g') || ':*'`;
+}
 
 function aCsv(filas, columnas) {
     const escapar = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -43,22 +55,27 @@ async function getCasoDetalle(colegioId, id, usuario) {
     );
 
     const { rows: derivaciones } = await pool.query(
-        `SELECT id, institucion, tipo, fecha_derivacion AS "fechaDerivacion", folio_externo AS "folioExterno", estado, notas
-         FROM derivaciones WHERE caso_id = $1 ORDER BY id DESC`,
+        `SELECT d.id, d.institucion, d.tipo, d.fecha_derivacion AS "fechaDerivacion", d.folio_externo AS "folioExterno",
+                d.estado, d.notas, (SELECT count(*) FROM adjuntos ad WHERE ad.derivacion_id = d.id) AS adjuntos
+         FROM derivaciones d WHERE d.caso_id = $1 ORDER BY d.id DESC`,
         [id]
     );
 
-    const { rows: firmas } = await pool.query(
-        `SELECT id, tipo_documento AS "tipoDocumento", nombre_firmante AS "nombreFirmante",
-                rut_firmante AS "rutFirmante", fecha_firma AS "fechaFirma"
-         FROM firmas WHERE caso_id = $1 ORDER BY id DESC`,
+    const mediaciones = await obtenerMediacionesDeCaso(id);
+
+    const { rows: estudiantesAdicionales } = await pool.query(
+        "SELECT id, nombre FROM caso_estudiantes_adicionales WHERE caso_id = $1 ORDER BY id",
         [id]
     );
 
     const { rows: colegioRows } = await pool.query("SELECT nombre, rbd FROM colegios WHERE id = $1", [colegioId]);
-    const { rows: protocoloRows } = await pool.query("SELECT nombre, normativa FROM protocolos WHERE categoria = $1", [
-        caso.categoria,
-    ]);
+    const { rows: overrideRows } = await pool.query(
+        "SELECT nombre, normativa FROM protocolos_colegio WHERE colegio_id = $1 AND categoria = $2",
+        [colegioId, caso.categoria]
+    );
+    const { rows: protocoloRows } = overrideRows[0]
+        ? { rows: overrideRows }
+        : await pool.query("SELECT nombre, normativa FROM protocolos WHERE categoria = $1", [caso.categoria]);
 
     const puedeVerPie =
         usuario && (usuario.rol === "admin" || usuario.rol === "superadmin" || usuario.especialidad === "Psicólogo PIE");
@@ -69,6 +86,7 @@ async function getCasoDetalle(colegioId, id, usuario) {
         id: caso.id,
         folio: caso.folio,
         estudiante: caso.estudiante,
+        estudiantesAdicionales,
         categoria: caso.categoria,
         descripcion: caso.descripcion,
         estado: caso.estado,
@@ -89,7 +107,7 @@ async function getCasoDetalle(colegioId, id, usuario) {
         protocoloNormativa: protocoloRows[0]?.normativa || null,
         pasosProtocolo,
         derivaciones,
-        firmas,
+        mediaciones,
         bitacora,
     };
 }
@@ -97,25 +115,31 @@ async function getCasoDetalle(colegioId, id, usuario) {
 const listar = asyncHandler(async (req, res) => {
     const { estado = "Todos", categoria = "Todos", responsable = "Todos", search = "", limit = 50, offset = 0 } = req.query;
 
-    const condiciones = ["colegio_id = $1"];
+    const condiciones = ["vc.colegio_id = $1"];
     const valores = [req.colegioId];
 
     if (estado !== "Todos") {
         valores.push(estado);
-        condiciones.push(`estado = $${valores.length}`);
+        condiciones.push(`vc.estado = $${valores.length}`);
     }
     if (categoria !== "Todos") {
         valores.push(categoria);
-        condiciones.push(`categoria = $${valores.length}`);
+        condiciones.push(`vc.categoria = $${valores.length}`);
     }
     if (responsable !== "Todos") {
         valores.push(responsable);
-        condiciones.push(`responsable_nombre = $${valores.length}`);
+        condiciones.push(`vc.responsable_nombre = $${valores.length}`);
     }
     if (search) {
         valores.push(search);
+        const tsquery = tsQueryBusqueda(`$${valores.length}`);
         condiciones.push(
-            `to_tsvector('spanish', inmutable_unaccent(estudiante)) @@ to_tsquery('spanish', inmutable_unaccent($${valores.length}) || ':*')`
+            `(to_tsvector('spanish', inmutable_unaccent(vc.estudiante)) @@ to_tsquery('spanish', ${tsquery})
+              OR EXISTS (
+                  SELECT 1 FROM caso_estudiantes_adicionales cea
+                  WHERE cea.caso_id = vc.id
+                    AND to_tsvector('spanish', inmutable_unaccent(cea.nombre)) @@ to_tsquery('spanish', ${tsquery})
+              ))`
         );
     }
 
@@ -123,16 +147,29 @@ const listar = asyncHandler(async (req, res) => {
     valores.push(Number(offset) || 0);
 
     const { rows } = await pool.query(
-        `SELECT id, folio, estudiante, categoria, fecha_apertura AS "fechaApertura", dias_activo AS "diasActivo",
-                responsable_nombre AS "responsablePrincipal", estado
-         FROM v_casos
+        `SELECT vc.id, vc.folio, vc.estudiante, vc.categoria, vc.fecha_apertura AS "fechaApertura", vc.dias_activo AS "diasActivo",
+                vc.responsable_nombre AS "responsablePrincipal", vc.estado,
+                COALESCE(
+                    (CURRENT_DATE - (SELECT MAX(b.fecha_ejecucion) FROM bitacora b WHERE b.caso_id = vc.id)),
+                    vc.dias_activo
+                ) AS "diasInactivo",
+                (SELECT count(*) FROM caso_estudiantes_adicionales cea WHERE cea.caso_id = vc.id) AS "estudiantesAdicionalesCount"
+         FROM v_casos vc
          WHERE ${condiciones.join(" AND ")}
-         ORDER BY id DESC
+         ORDER BY vc.id DESC
          LIMIT $${valores.length - 1} OFFSET $${valores.length}`,
         valores
     );
 
-    res.json(rows);
+    const { rows: colegioRows } = await pool.query("SELECT dias_alerta_critico FROM colegios WHERE id = $1", [req.colegioId]);
+    const diasAlertaCritico = colegioRows[0]?.dias_alerta_critico ?? 10;
+
+    res.json(
+        rows.map((c) => ({
+            ...c,
+            alertaCritica: c.estado !== "Cerrado" && c.diasInactivo >= diasAlertaCritico,
+        }))
+    );
 });
 
 const dashboard = asyncHandler(async (req, res) => {
@@ -227,6 +264,49 @@ const dashboard = asyncHandler(async (req, res) => {
     };
     const pmeCruce = metas.map((m) => ({ ...m, valorActual: indicadoresCalculados[m.indicador] ?? null }));
 
+    const capacitacionesPorVencer = await listarProximasAVencer(req.colegioId, 60);
+
+    const { rows: cargaTrabajo } = await pool.query(
+        `SELECT u.id, u.nombre, count(c.id) FILTER (WHERE c.estado != 'Cerrado')::int AS "casosActivos"
+         FROM usuarios u
+         LEFT JOIN casos c ON c.responsable_id = u.id
+         WHERE u.colegio_id = $1 AND u.activo = TRUE AND u.rol IN ('admin', 'funcionario')
+         GROUP BY u.id, u.nombre
+         ORDER BY "casosActivos" DESC`,
+        [req.colegioId]
+    );
+
+    const { rows: colegioReincidenciaRows } = await pool.query(
+        "SELECT meses_alerta_reincidencia FROM colegios WHERE id = $1",
+        [req.colegioId]
+    );
+    const mesesAlertaReincidencia = colegioReincidenciaRows[0]?.meses_alerta_reincidencia ?? 6;
+    // "todos_estudiantes" junta el estudiante principal de cada caso con sus
+    // estudiantes adicionales, para que la reincidencia se detecte aunque el
+    // nombre que coincide no sea el principal en uno de los dos casos.
+    const { rows: reincidencias } = await pool.query(
+        `WITH todos_estudiantes AS (
+             SELECT id AS caso_id, estudiante AS nombre FROM casos WHERE colegio_id = $1
+             UNION ALL
+             SELECT cea.caso_id, cea.nombre
+             FROM caso_estudiantes_adicionales cea
+             JOIN casos c ON c.id = cea.caso_id
+             WHERE c.colegio_id = $1
+         )
+         SELECT DISTINCT c2.id, c2.folio, c2.estudiante, c2.categoria AS "categoriaNueva", c2.fecha_apertura AS "fechaNueva",
+                c1.folio AS "folioAnterior", c1.categoria AS "categoriaAnterior", c1.fecha_cierre AS "fechaCierreAnterior"
+         FROM todos_estudiantes te1
+         JOIN todos_estudiantes te2 ON lower(inmutable_unaccent(te2.nombre)) = lower(inmutable_unaccent(te1.nombre))
+                                    AND te2.caso_id != te1.caso_id
+         JOIN casos c1 ON c1.id = te1.caso_id AND c1.estado = 'Cerrado'
+         JOIN casos c2 ON c2.id = te2.caso_id
+                      AND c2.fecha_apertura > c1.fecha_cierre
+                      AND c2.fecha_apertura <= c1.fecha_cierre + ($2 || ' months')::interval
+         ORDER BY c2.fecha_apertura DESC
+         LIMIT 20`,
+        [req.colegioId, mesesAlertaReincidencia]
+    );
+
     res.json({
         kpis,
         alertas,
@@ -236,6 +316,10 @@ const dashboard = asyncHandler(async (req, res) => {
         impacto: { casesWithMedida: casesWithMedida.length, efectivas, noEfectivas },
         proximosVencimientos: vencimientos,
         pmeCruce,
+        capacitacionesPorVencer,
+        cargaTrabajo,
+        mesesAlertaReincidencia,
+        reincidencias,
     });
 });
 
@@ -246,8 +330,18 @@ const obtener = asyncHandler(async (req, res) => {
 });
 
 const crear = asyncHandler(async (req, res) => {
-    const { estudiante, fechaApertura, categoria, responsableId, descripcion, curso, tieneNee, diagnosticoPie, beneficiosJunaeb } =
-        req.body;
+    const {
+        estudiante,
+        estudiantesAdicionales = [],
+        fechaApertura,
+        categoria,
+        responsableId,
+        descripcion,
+        curso,
+        tieneNee,
+        diagnosticoPie,
+        beneficiosJunaeb,
+    } = req.body;
 
     const { rows: respRows } = await pool.query(
         "SELECT id FROM usuarios WHERE id = $1 AND colegio_id = $2 AND rol IN ('admin','funcionario') AND activo = TRUE",
@@ -255,8 +349,7 @@ const crear = asyncHandler(async (req, res) => {
     );
     if (respRows.length === 0) return res.status(400).json({ error: "Responsable inválido." });
 
-    const { rows: protocoloRows } = await pool.query("SELECT pasos FROM protocolos WHERE categoria = $1", [categoria]);
-    const pasos = protocoloRows[0]?.pasos || [];
+    const pasos = await obtenerPasosProtocoloEfectivo(req.colegioId, categoria);
 
     const client = await pool.connect();
     let casoId;
@@ -281,6 +374,13 @@ const crear = asyncHandler(async (req, res) => {
             ]
         );
         casoId = nuevoCaso[0].id;
+
+        for (const nombreAdicional of estudiantesAdicionales) {
+            await client.query("INSERT INTO caso_estudiantes_adicionales (caso_id, nombre) VALUES ($1, $2)", [
+                casoId,
+                nombreAdicional,
+            ]);
+        }
 
         const contenidoApertura = "Apertura de expediente institucional.";
         const hash = calcularHash({ contenido: contenidoApertura, fecha: fechaApertura, operadorId: req.usuario.id, hashAnterior: null });
@@ -390,6 +490,32 @@ const actualizar = asyncHandler(async (req, res) => {
     res.json(await getCasoDetalle(req.colegioId, req.params.id, req.usuario));
 });
 
+const agregarEstudianteAdicional = asyncHandler(async (req, res) => {
+    const { rows } = await pool.query("SELECT id FROM casos WHERE id = $1 AND colegio_id = $2", [
+        req.params.id,
+        req.colegioId,
+    ]);
+    if (!rows[0]) return res.status(404).json({ error: "Caso no encontrado." });
+
+    await pool.query("INSERT INTO caso_estudiantes_adicionales (caso_id, nombre) VALUES ($1, $2)", [
+        req.params.id,
+        req.body.nombre,
+    ]);
+    res.status(201).json(await getCasoDetalle(req.colegioId, req.params.id, req.usuario));
+});
+
+const eliminarEstudianteAdicional = asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+        `DELETE FROM caso_estudiantes_adicionales
+         WHERE id = $1 AND caso_id = $2
+           AND caso_id IN (SELECT id FROM casos WHERE colegio_id = $3)
+         RETURNING id`,
+        [req.params.estId, req.params.id, req.colegioId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Estudiante adicional no encontrado." });
+    res.json(await getCasoDetalle(req.colegioId, req.params.id, req.usuario));
+});
+
 const bitacora = asyncHandler(async (req, res) => {
     const { tipo, fecha, contenido, subtipo, estadoMedida, consentimientoApoderado, justificacionSinConsentimiento } = req.body;
     const tipoEnum = TIPO_BITACORA[tipo];
@@ -447,16 +573,7 @@ function lineaDato(doc, etiqueta, valor) {
     doc.fontSize(10).fillColor("#475569").text(etiqueta, { continued: true }).fillColor("#000000").text(` ${valor}`);
 }
 
-const pdf = asyncHandler(async (req, res) => {
-    const caso = await getCasoDetalle(req.colegioId, req.params.id, req.usuario);
-    if (!caso) return res.status(404).json({ error: "Caso no encontrado." });
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=Expediente_${caso.folio}.pdf`);
-
-    const doc = new PDFDocument({ margin: 50, bufferPages: true });
-    doc.pipe(res);
-
+function dibujarExpedientePdf(doc, caso) {
     const hoy = new Date().toISOString().slice(0, 10);
 
     // Encabezado institucional
@@ -481,7 +598,10 @@ const pdf = asyncHandler(async (req, res) => {
 
     // Datos generales
     seccionTitulo(doc, "Datos Generales del Caso");
-    lineaDato(doc, "Estudiante:", caso.estudiante);
+    lineaDato(doc, "Estudiante Principal:", caso.estudiante);
+    if (caso.estudiantesAdicionales && caso.estudiantesAdicionales.length) {
+        lineaDato(doc, "Otros estudiantes involucrados:", caso.estudiantesAdicionales.map((e) => e.nombre).join(", "));
+    }
     lineaDato(doc, "Curso:", caso.curso || "No registrado");
     lineaDato(doc, "Estado:", caso.estado);
     lineaDato(doc, "Fecha de apertura:", caso.fechaApertura);
@@ -540,19 +660,32 @@ const pdf = asyncHandler(async (req, res) => {
                 `Fecha: ${d.fechaDerivacion}${d.folioExterno ? ` — Folio externo: ${d.folioExterno}` : ""}`
             );
             if (d.notas) doc.text(`Notas: ${d.notas}`);
+            if (Number(d.adjuntos) > 0) doc.text(`Medios de verificación adjuntos: ${d.adjuntos}`);
             doc.fillColor("#000000");
             doc.moveDown(0.2);
         });
     }
 
-    seccionTitulo(doc, "Firmas Electrónicas Simples");
-    if (caso.firmas.length === 0) {
-        doc.fontSize(10).text("Sin firmas registradas.");
+    seccionTitulo(doc, "Actas de Mediación Escolar");
+    if (caso.mediaciones.length === 0) {
+        doc.fontSize(10).text("Sin actas de mediación registradas.");
     } else {
-        caso.firmas.forEach((f) => {
-            doc.fontSize(10).text(
-                `${f.tipoDocumento} — ${f.nombreFirmante} (RUT ${f.rutFirmante}) — ${new Date(f.fechaFirma).toLocaleString("es-CL")}`
-            );
+        caso.mediaciones.forEach((m) => {
+            doc.fontSize(10).text(`Mediación del ${m.fechaMediacion} — Mediador(a): ${m.mediador}`);
+            doc.fontSize(9).fillColor("#475569").text(`Participantes: ${m.participantes}`);
+            doc.fillColor("#000000").text(`Acuerdo: ${m.acuerdo}`);
+            if (Number(m.adjuntos) > 0) doc.fontSize(9).fillColor("#475569").text(`Acta firmada adjunta: sí (${m.adjuntos} archivo(s))`);
+            doc.fillColor("#000000");
+            if (m.compromisos.length > 0) {
+                m.compromisos.forEach((c) => {
+                    const marca = c.cumplido ? "[Cumplido]" : "[Pendiente]";
+                    doc.fontSize(9).fillColor(c.cumplido ? "#15803d" : "#475569").text(`  ${marca} `, { continued: true });
+                    doc.fillColor("#000000").text(
+                        `${c.descripcion}${c.responsable ? ` — Responsable: ${c.responsable}` : ""}${c.fechaLimite ? ` (plazo: ${c.fechaLimite})` : ""}`
+                    );
+                });
+            }
+            doc.moveDown(0.3);
         });
     }
 
@@ -586,8 +719,79 @@ const pdf = asyncHandler(async (req, res) => {
             align: "center",
         });
     }
+}
 
+const pdf = asyncHandler(async (req, res) => {
+    const caso = await getCasoDetalle(req.colegioId, req.params.id, req.usuario);
+    if (!caso) return res.status(404).json({ error: "Caso no encontrado." });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=Expediente_${caso.folio}.pdf`);
+
+    const doc = new PDFDocument({ margin: 50, bufferPages: true });
+    doc.pipe(res);
+    dibujarExpedientePdf(doc, caso);
     doc.end();
+});
+
+const exportarPdfsZip = asyncHandler(async (req, res) => {
+    const { estado = "Todos", categoria = "Todos", responsable = "Todos", search = "" } = req.query;
+
+    const condiciones = ["colegio_id = $1"];
+    const valores = [req.colegioId];
+    if (estado !== "Todos") {
+        valores.push(estado);
+        condiciones.push(`estado = $${valores.length}`);
+    }
+    if (categoria !== "Todos") {
+        valores.push(categoria);
+        condiciones.push(`categoria = $${valores.length}`);
+    }
+    if (responsable !== "Todos") {
+        valores.push(responsable);
+        condiciones.push(`responsable_nombre = $${valores.length}`);
+    }
+    if (search) {
+        valores.push(search);
+        const tsquery = tsQueryBusqueda(`$${valores.length}`);
+        condiciones.push(
+            `(to_tsvector('spanish', inmutable_unaccent(estudiante)) @@ to_tsquery('spanish', ${tsquery})
+              OR EXISTS (
+                  SELECT 1 FROM caso_estudiantes_adicionales cea
+                  WHERE cea.caso_id = v_casos.id
+                    AND to_tsvector('spanish', inmutable_unaccent(cea.nombre)) @@ to_tsquery('spanish', ${tsquery})
+              ))`
+        );
+    }
+
+    const { rows: casosFiltrados } = await pool.query(
+        `SELECT id FROM v_casos WHERE ${condiciones.join(" AND ")} ORDER BY id`,
+        valores
+    );
+
+    if (casosFiltrados.length === 0) {
+        return res.status(404).json({ error: "No hay expedientes que coincidan con los filtros." });
+    }
+    if (casosFiltrados.length > 200) {
+        return res.status(400).json({ error: "Demasiados expedientes (máximo 200 por exportación). Acota los filtros." });
+    }
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", "attachment; filename=expedientes_sge.zip");
+
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.pipe(res);
+
+    for (const { id } of casosFiltrados) {
+        const caso = await getCasoDetalle(req.colegioId, id, req.usuario);
+        if (!caso) continue;
+        const doc = new PDFDocument({ margin: 50, bufferPages: true });
+        archive.append(doc, { name: `Expediente_${caso.folio}.pdf` });
+        dibujarExpedientePdf(doc, caso);
+        doc.end();
+    }
+
+    await archive.finalize();
 });
 
 const listarPasosProtocolo = asyncHandler(async (req, res) => {
@@ -624,22 +828,6 @@ const actualizarPasoProtocolo = asyncHandler(async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ error: "Paso de protocolo no encontrado." });
     res.json(rows[0]);
-});
-
-const notificarApoderado = asyncHandler(async (req, res) => {
-    const { rows: casoRows } = await pool.query("SELECT folio FROM casos WHERE id = $1 AND colegio_id = $2", [
-        req.params.id,
-        req.colegioId,
-    ]);
-    if (!casoRows[0]) return res.status(404).json({ error: "Caso no encontrado." });
-
-    const { canal, destinatario, mensaje } = req.body;
-    let resultado;
-    if (canal === "whatsapp") resultado = await enviarWhatsapp({ to: destinatario, mensaje });
-    else if (canal === "sms") resultado = await enviarSms({ to: destinatario, mensaje });
-    else resultado = await enviarCorreo({ to: destinatario, subject: `SGE - Notificación caso ${casoRows[0].folio}`, text: mensaje });
-
-    res.json({ ok: true, canal, dryRun: Boolean(resultado.dryRun) });
 });
 
 const elegiblesPurga = asyncHandler(async (req, res) => {
@@ -697,12 +885,14 @@ module.exports = {
     obtener,
     crear,
     actualizar,
+    agregarEstudianteAdicional,
+    eliminarEstudianteAdicional,
     bitacora,
     pdf,
+    exportarPdfsZip,
     getCasoDetalle,
     listarPasosProtocolo,
     actualizarPasoProtocolo,
-    notificarApoderado,
     elegiblesPurga,
     purgar,
     exportarAnonimoCsv,

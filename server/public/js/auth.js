@@ -81,7 +81,7 @@ const Auth = (() => {
         document.getElementById("btn-nav-central").classList.toggle("hidden", !(esSuperadmin && !enColegio));
         document.getElementById("btn-volver-central").classList.toggle("hidden", !(esSuperadmin && enColegio));
 
-        ["btn-nav-dashboard", "btn-nav-casos", "btn-nav-equipo", "btn-nav-config"].forEach((id) => {
+        ["btn-nav-dashboard", "btn-nav-casos", "btn-nav-equipo", "btn-nav-convivencia", "btn-nav-config"].forEach((id) => {
             document.getElementById(id).classList.toggle("hidden", esSuperadmin && !enColegio);
         });
 

@@ -2,8 +2,14 @@ const express = require("express");
 const { validar } = require("../middleware/validate");
 const { requireAuth, requireRol, requireColegioContexto } = require("../middleware/auth");
 const { auditar } = require("../middleware/audit");
-const { crearUsuarioColegioSchema, actualizarUsuarioColegioSchema, eliminarUsuarioSchema } = require("../validation/equipo");
+const {
+    crearUsuarioColegioSchema,
+    actualizarUsuarioColegioSchema,
+    eliminarUsuarioSchema,
+    capacitacionSchema,
+} = require("../validation/equipo");
 const controller = require("../controllers/equipo");
+const capacitacionesController = require("../controllers/capacitaciones");
 
 const router = express.Router();
 
@@ -30,6 +36,21 @@ router.delete(
     validar(eliminarUsuarioSchema),
     auditar("equipo.eliminar"),
     controller.eliminar
+);
+
+router.get("/:id/capacitaciones", capacitacionesController.listarPorUsuario);
+router.post(
+    "/:id/capacitaciones",
+    requireRol("admin", "superadmin"),
+    validar(capacitacionSchema),
+    auditar("capacitaciones.crear"),
+    capacitacionesController.crear
+);
+router.delete(
+    "/capacitaciones/:capId",
+    requireRol("admin", "superadmin"),
+    auditar("capacitaciones.eliminar"),
+    capacitacionesController.eliminar
 );
 
 module.exports = router;

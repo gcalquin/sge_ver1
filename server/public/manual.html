@@ -1,207 +1,839 @@
-<h1>Manual de Usuario del Sistema de Gestión de Casos Estudiantiles (SGE)</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Manual de Usuario - Sistema de Gestión de Casos Estudiantiles (SGE)</title>
+<style>
+    :root {
+        --azul: #1e3a8a;
+        --azul-claro: #eff6ff;
+        --gris-borde: #e2e8f0;
+        --gris-texto: #334155;
+        --verde: #15803d;
+        --verde-claro: #f0fdf4;
+        --ambar: #b45309;
+        --ambar-claro: #fffbeb;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--gris-texto);
+        background-color: #f8fafc;
+        line-height: 1.6;
+    }
+    .layout {
+        display: flex;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    /* ---------- Índice lateral ---------- */
+    nav.indice {
+        width: 280px;
+        flex-shrink: 0;
+        background-color: #0f172a;
+        color: #cbd5e1;
+        min-height: 100vh;
+        padding: 1.5rem 1rem;
+        position: sticky;
+        top: 0;
+        align-self: flex-start;
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+    nav.indice h2 {
+        color: #ffffff;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 0.5rem;
+        margin-top: 0;
+    }
+    nav.indice ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+    }
+    nav.indice ul ul {
+        padding-left: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    nav.indice li { margin: 0.15rem 0; }
+    nav.indice a {
+        color: #cbd5e1;
+        text-decoration: none;
+        font-size: 0.85rem;
+        display: block;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+    }
+    nav.indice a:hover {
+        background-color: #1e293b;
+        color: #ffffff;
+    }
+    nav.indice > ul > li > a {
+        font-weight: 600;
+        color: #ffffff;
+        margin-top: 0.4rem;
+    }
+    /* ---------- Contenido ---------- */
+    main.contenido {
+        flex: 1;
+        padding: 2rem 3rem 5rem 3rem;
+        min-width: 0;
+    }
+    h1 {
+        color: var(--azul);
+        font-size: 1.8rem;
+        border-bottom: 3px solid var(--azul);
+        padding-bottom: 0.75rem;
+    }
+    h2 {
+        color: var(--azul);
+        font-size: 1.35rem;
+        margin-top: 2.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--gris-borde);
+    }
+    h3 {
+        color: #1e293b;
+        font-size: 1.1rem;
+        margin-top: 1.8rem;
+    }
+    h4 {
+        color: #334155;
+        font-size: 1rem;
+        margin-top: 1.2rem;
+    }
+    p { margin: 0.6rem 0; }
+    ul, ol { padding-left: 1.4rem; }
+    li { margin: 0.3rem 0; }
+    a.volver {
+        font-size: 0.78rem;
+        text-decoration: none;
+        color: var(--azul);
+        float: right;
+    }
+    a.volver:hover { text-decoration: underline; }
+    strong { color: #0f172a; }
+    code {
+        background-color: #f1f5f9;
+        border: 1px solid var(--gris-borde);
+        border-radius: 0.25rem;
+        padding: 0.1rem 0.35rem;
+        font-size: 0.85rem;
+        color: #be123c;
+    }
+    /* ---------- Caja de ejemplo ---------- */
+    .ejemplo {
+        background-color: var(--verde-claro);
+        border-left: 4px solid var(--verde);
+        border-radius: 0.4rem;
+        padding: 0.75rem 1rem;
+        margin: 0.8rem 0;
+        font-size: 0.95rem;
+    }
+    .ejemplo .titulo-ejemplo {
+        font-weight: 700;
+        color: var(--verde);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    /* ---------- Caja de nota / advertencia ---------- */
+    .nota {
+        background-color: var(--azul-claro);
+        border-left: 4px solid var(--azul);
+        border-radius: 0.4rem;
+        padding: 0.75rem 1rem;
+        margin: 0.8rem 0;
+        font-size: 0.95rem;
+    }
+    .nota .titulo-nota {
+        font-weight: 700;
+        color: var(--azul);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    .advertencia {
+        background-color: var(--ambar-claro);
+        border-left: 4px solid var(--ambar);
+        border-radius: 0.4rem;
+        padding: 0.75rem 1rem;
+        margin: 0.8rem 0;
+        font-size: 0.95rem;
+    }
+    .advertencia .titulo-advertencia {
+        font-weight: 700;
+        color: var(--ambar);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    /* ---------- Tabla de glosario / pasos ---------- */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.92rem;
+    }
+    table th, table td {
+        border: 1px solid var(--gris-borde);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+        vertical-align: top;
+    }
+    table th {
+        background-color: #f1f5f9;
+        color: #0f172a;
+    }
+    .badge-rol {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.15rem 0.5rem;
+        border-radius: 50rem;
+        background-color: #e0e7ff;
+        color: #3730a3;
+    }
+    footer.pie {
+        text-align: center;
+        font-size: 0.8rem;
+        color: #94a3b8;
+        padding: 2rem 0 1rem 0;
+        border-top: 1px solid var(--gris-borde);
+        margin-top: 3rem;
+    }
+    @media print {
+        nav.indice { display: none; }
+        main.contenido { padding: 0 1rem; }
+        a.volver { display: none; }
+    }
+    @media (max-width: 900px) {
+        .layout { flex-direction: column; }
+        nav.indice { width: 100%; min-height: auto; position: static; max-height: none; }
+        main.contenido { padding: 1.5rem; }
+    }
+</style>
+</head>
+<body>
+<div class="layout">
 
-<h2>1. Introducción y objetivo del sistema</h2>
-<p>El Sistema de Gestión de Casos Estudiantiles, conocido como SGE, es una plataforma diseñada para que los colegios registren, organicen y dejen seguimiento de las situaciones que afectan a sus estudiantes, tales como problemas de convivencia escolar, dificultades académicas, inasistencia, situaciones de salud mental o emocional, y posibles vulneraciones de derechos.</p>
-<p>El objetivo principal del sistema es centralizar la información de cada caso en un expediente único, permitir que distintos profesionales del establecimiento colaboren en su atención, y asegurar que se respeten los plazos y procedimientos establecidos por la normativa educacional vigente. Además, el sistema permite generar reportes, mantener comunicación con los apoderados y conservar un registro histórico de todas las acciones realizadas.</p>
-<p>El SGE está pensado para ser utilizado por distintos perfiles dentro de un establecimiento educacional, como administradores, orientadores, psicólogos, inspectores y otros profesionales que participan en la atención de los estudiantes.</p>
+    <!-- ====================== ÍNDICE ====================== -->
+    <nav class="indice" id="indice">
+        <h2>Índice</h2>
+        <ul>
+            <li><a href="#introduccion">1. Introducción y objetivo del sistema</a></li>
+            <li><a href="#requisitos">2. Requisitos para usar el sistema</a></li>
+            <li><a href="#acceso">3. Acceso e inicio de sesión</a></li>
+            <li><a href="#interfaz">4. Descripción general de la interfaz</a></li>
+            <li><a href="#dashboard">5. El Dashboard (panel principal)</a>
+                <ul>
+                    <li><a href="#dashboard-indicadores">5.1 Indicadores y alertas</a></li>
+                    <li><a href="#dashboard-graficos">5.2 Gráficos y vencimientos</a></li>
+                    <li><a href="#dashboard-carga">5.3 Carga de trabajo y reincidencia</a></li>
+                </ul>
+            </li>
+            <li><a href="#casos">6. Gestión de Casos</a>
+                <ul>
+                    <li><a href="#casos-crear">6.1 Crear un nuevo caso</a></li>
+                    <li><a href="#casos-filtrar">6.2 Consultar y filtrar el listado</a></li>
+                    <li><a href="#casos-zip">6.3 Exportar expedientes en ZIP</a></li>
+                </ul>
+            </li>
+            <li><a href="#expediente">7. Trabajar dentro de un expediente</a>
+                <ul>
+                    <li><a href="#expediente-bitacora">7.1 Bitácora de seguimiento</a></li>
+                    <li><a href="#expediente-mediacion">7.2 Actas de mediación escolar</a></li>
+                    <li><a href="#expediente-protocolo">7.3 Protocolo de actuación</a></li>
+                    <li><a href="#expediente-derivacion">7.4 Derivaciones externas</a></li>
+                    <li><a href="#expediente-cierre">7.5 Cerrar el caso</a></li>
+                </ul>
+            </li>
+            <li><a href="#equipo">8. Gestor de Equipo</a>
+                <ul>
+                    <li><a href="#equipo-agregar">8.1 Agregar un integrante</a></li>
+                    <li><a href="#equipo-capacitaciones">8.2 Capacitaciones del equipo</a></li>
+                    <li><a href="#equipo-profesores">8.3 Profesores jefe por curso</a></li>
+                </ul>
+            </li>
+            <li><a href="#convivencia">9. Convivencia Escolar</a>
+                <ul>
+                    <li><a href="#convivencia-actividades">9.1 Actividades de convivencia</a></li>
+                    <li><a href="#convivencia-medidas">9.2 Catálogo de medidas reparatorias</a></li>
+                    <li><a href="#convivencia-protocolos">9.3 Protocolos personalizados</a></li>
+                </ul>
+            </li>
+            <li><a href="#configuracion">10. Configuración del colegio</a>
+                <ul>
+                    <li><a href="#config-alerta">10.1 Umbral de alerta crítica</a></li>
+                    <li><a href="#config-purga">10.2 Retención y purga de datos</a></li>
+                    <li><a href="#config-pme">10.3 Metas del PME</a></li>
+                    <li><a href="#config-auditoria">10.4 Registro de auditoría</a></li>
+                </ul>
+            </li>
+            <li><a href="#central">11. Panel Central (administración general)</a>
+                <ul>
+                    <li><a href="#central-colegios">11.1 Crear y editar colegios</a></li>
+                    <li><a href="#central-sostenedores">11.2 Sostenedores</a></li>
+                </ul>
+            </li>
+            <li><a href="#errores">12. Errores comunes y cómo solucionarlos</a></li>
+            <li><a href="#buenas-practicas">13. Buenas prácticas de uso</a></li>
+            <li><a href="#faq">14. Preguntas frecuentes</a></li>
+            <li><a href="#glosario">15. Glosario de términos</a></li>
+        </ul>
+    </nav>
 
-<h2>2. Requisitos para usar el sistema</h2>
-<ul>
-  <li>Contar con un computador, tablet o teléfono con acceso a internet.</li>
-  <li>Disponer de un navegador web actualizado, como Chrome, Firefox o Edge.</li>
-  <li>Tener un nombre de usuario y una contraseña entregados por el administrador del colegio o por el equipo a cargo del sistema.</li>
-  <li>Conocer el nombre del colegio al que pertenece su cuenta, ya que será necesario seleccionarlo al iniciar sesión.</li>
-  <li>Mantener una conexión a internet estable para un funcionamiento óptimo, aunque el sistema permite registrar cierta información aunque la conexión se pierda momentáneamente.</li>
-</ul>
+    <!-- ====================== CONTENIDO ====================== -->
+    <main class="contenido">
 
-<h2>3. Acceso e inicio de sesión</h2>
-<p>Para ingresar al sistema debe seguir los siguientes pasos:</p>
-<ol>
-  <li>Abra su navegador web e ingrese a la dirección del sistema entregada por su colegio.</li>
-  <li>En la pantalla de inicio, seleccione el ámbito correspondiente. Si pertenece a un colegio, elija el nombre de su establecimiento en la lista. Si es un administrador general, seleccione la opción de administración central.</li>
-  <li>Escriba su nombre de usuario en el campo correspondiente.</li>
-  <li>Escriba su contraseña en el campo correspondiente. Recuerde que la contraseña distingue entre mayúsculas y minúsculas.</li>
-  <li>Presione el botón de ingresar o iniciar sesión.</li>
-  <li>Si los datos son correctos, el sistema lo llevará automáticamente a la pantalla principal correspondiente a su rol.</li>
-</ol>
-<p>Si necesita salir del sistema, debe utilizar el botón <strong>Cerrar Sesión</strong> ubicado en el panel lateral, en lugar de simplemente cerrar la ventana del navegador, para proteger la información de su cuenta.</p>
+        <h1>Manual de Usuario del Sistema de Gestión de Casos Estudiantiles (SGE)</h1>
+        <p>Este manual explica, en lenguaje simple y paso a paso, cómo usar todas las funciones del sistema. Cada sección incluye un ejemplo real para que pueda entender cómo aplicar lo explicado en el día a día del colegio. Puede usar el índice de la izquierda para saltar directamente a la sección que necesite.</p>
 
-<h2>4. Descripción general de la interfaz</h2>
-<p>Una vez dentro del sistema, la pantalla se organiza en tres grandes zonas:</p>
-<h3>Panel lateral de navegación</h3>
-<p>Ubicado en el costado izquierdo, permite moverse entre las distintas secciones del sistema, como el Dashboard, la Gestión de Casos, el Gestor de Equipo y la Configuración. En la parte inferior se muestra el nombre del usuario conectado, su rol y el botón para cerrar sesión.</p>
-<h3>Encabezado superior</h3>
-<p>Muestra el título de la sección en la que se encuentra el usuario y, en la mayoría de las vistas, el botón <strong>Nuevo Caso</strong>, que permite abrir un expediente de forma rápida desde cualquier pantalla.</p>
-<h3>Área de contenido principal</h3>
-<p>Es la zona central donde se muestra la información correspondiente a la sección seleccionada, como tablas de casos, formularios, gráficos o detalles de un expediente.</p>
-<p>Adicionalmente, si la cuenta corresponde a un administrador general, existe un <strong>Panel Central</strong> donde se gestionan todos los colegios registrados en el sistema.</p>
+        <!-- ============ 1. INTRODUCCIÓN ============ -->
+        <h2 id="introduccion">1. Introducción y objetivo del sistema<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>El Sistema de Gestión de Casos Estudiantiles, conocido como <strong>SGE</strong>, es una plataforma diseñada para que los colegios registren, organicen y den seguimiento a las situaciones que afectan a sus estudiantes, tales como problemas de convivencia escolar, dificultades académicas, inasistencia, situaciones de salud mental o emocional, y posibles vulneraciones de derechos.</p>
+        <p>El objetivo principal del sistema es centralizar la información de cada caso en un expediente único, permitir que distintos profesionales del establecimiento colaboren en su atención, y asegurar que se respeten los plazos y procedimientos establecidos por la normativa educacional vigente. Además, el sistema permite generar reportes, mantener comunicación con los apoderados y conservar un registro histórico de todas las acciones realizadas.</p>
+        <p>El SGE está pensado para ser utilizado por distintos perfiles dentro de un establecimiento educacional, como administradores, orientadores, psicólogos, inspectores y otros profesionales que participan en la atención de los estudiantes.</p>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El colegio "Gabriela Mistral" usa el SGE para que la encargada de convivencia escolar, el psicólogo PIE y el inspector general trabajen sobre los mismos casos sin tener que enviarse correos o planillas por separado: todos ven la misma información, actualizada en tiempo real.
+        </div>
 
-<h2>5. Funciones principales</h2>
+        <!-- ============ 2. REQUISITOS ============ -->
+        <h2 id="requisitos">2. Requisitos para usar el sistema<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <ul>
+            <li>Contar con un computador, tablet o teléfono con acceso a internet.</li>
+            <li>Disponer de un navegador web actualizado, como Chrome, Firefox o Edge.</li>
+            <li>Tener un nombre de usuario y una contraseña entregados por el administrador del colegio o por el equipo a cargo del sistema.</li>
+            <li>Conocer el nombre del colegio al que pertenece su cuenta, ya que será necesario seleccionarlo al iniciar sesión.</li>
+            <li>Mantener una conexión a internet estable para un funcionamiento óptimo, aunque el sistema permite registrar cierta información aunque la conexión se pierda momentáneamente.</li>
+        </ul>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Una orientadora que trabaja desde su celular en el patio del colegio puede abrir el navegador de su teléfono, ingresar la dirección del sistema y registrar una entrevista sin necesidad de un computador.
+        </div>
 
-<h3>5.1 Revisar el Dashboard</h3>
-<p>El Dashboard es la pantalla principal y entrega una visión general del estado de los casos del colegio.</p>
-<ol>
-  <li>Al ingresar al sistema, observe los indicadores numéricos en la parte superior, que muestran el total de casos, los casos abiertos, los que están en seguimiento y los que ya fueron cerrados.</li>
-  <li>Revise el panel de alertas críticas, que muestra los casos que no han tenido actividad reciente y requieren atención prioritaria.</li>
-  <li>Observe los gráficos de categorías y responsables para identificar tendencias dentro del establecimiento.</li>
-  <li>Revise el listado de próximos vencimientos, que indica los plazos de los protocolos de actuación que están cerca de cumplirse.</li>
-</ol>
-<p><em>Ejemplo:</em> si el panel de alertas muestra un caso con quince días sin actividad, el funcionario responsable debería ingresar al expediente y registrar una nueva acción de seguimiento.</p>
+        <!-- ============ 3. ACCESO ============ -->
+        <h2 id="acceso">3. Acceso e inicio de sesión<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>Para ingresar al sistema debe seguir los siguientes pasos:</p>
+        <ol>
+            <li>Abra su navegador web e ingrese a la dirección del sistema entregada por su colegio.</li>
+            <li>En la pantalla de inicio, seleccione el ámbito correspondiente. Si pertenece a un colegio, elija el nombre de su establecimiento en la lista. Si es un administrador general, seleccione la opción de administración central.</li>
+            <li>Escriba su nombre de usuario en el campo correspondiente.</li>
+            <li>Escriba su contraseña en el campo correspondiente. Recuerde que la contraseña distingue entre mayúsculas y minúsculas.</li>
+            <li>Presione el botón <strong>Ingresar al Sistema</strong>.</li>
+            <li>Si los datos son correctos, el sistema lo llevará automáticamente a la pantalla principal correspondiente a su rol.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Carlos trabaja en el Colegio San Ignacio. Al abrir el sistema, selecciona "San Ignacio" en la lista de ámbitos, escribe su usuario <code>carlos.retamal</code>, su contraseña personal, y presiona Ingresar. El sistema lo lleva directo a su Dashboard.
+        </div>
+        <div class="advertencia">
+            <span class="titulo-advertencia">Importante</span>
+            Para salir del sistema use siempre el botón <strong>Cerrar Sesión</strong> del panel lateral, en lugar de cerrar la pestaña del navegador, para proteger la información de su cuenta.
+        </div>
 
-<h3>5.2 Crear un nuevo caso</h3>
-<ol>
-  <li>Presione el botón <strong>Nuevo Caso</strong> ubicado en la parte superior de la pantalla.</li>
-  <li>Complete el nombre del estudiante involucrado.</li>
-  <li>Seleccione la fecha de apertura del caso.</li>
-  <li>Seleccione la categoría que mejor describe la situación, como Convivencia Escolar, Académico, Asistencia, Salud Mental o Vulneración de Derechos.</li>
-  <li>Seleccione el profesional responsable principal del caso.</li>
-  <li>Indique el curso del estudiante, si corresponde.</li>
-  <li>Si el estudiante cuenta con necesidades educativas especiales, marque la casilla correspondiente y describa el diagnóstico, recordando que esta información es confidencial.</li>
-  <li>Escriba una descripción inicial clara de la situación.</li>
-  <li>Presione el botón <strong>Aperturar</strong> para guardar el caso.</li>
-</ol>
-<p><em>Ejemplo:</em> ante una situación de agresión verbal entre compañeros, se debe crear un caso de categoría Convivencia Escolar, describiendo brevemente lo ocurrido y asignando un responsable que dará seguimiento.</p>
+        <!-- ============ 4. INTERFAZ ============ -->
+        <h2 id="interfaz">4. Descripción general de la interfaz<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>Una vez dentro del sistema, la pantalla se organiza en tres grandes zonas:</p>
+        <h3>Panel lateral de navegación</h3>
+        <p>Ubicado en el costado izquierdo, permite moverse entre las distintas secciones del sistema: Dashboard, Gestión de Casos, Gestor de Equipo, Convivencia y Configuración. Al pasar el mouse sobre cada botón aparece una breve ayuda (tooltip) explicando para qué sirve esa sección. En la parte inferior se muestra el logo del colegio (si fue cargado), el nombre del usuario conectado, su rol y el botón para cerrar sesión.</p>
+        <h3>Encabezado superior</h3>
+        <p>Muestra el título de la sección en la que se encuentra el usuario y, en la mayoría de las vistas, el botón <strong>Nuevo Caso</strong>, que permite abrir un expediente de forma rápida desde cualquier pantalla.</p>
+        <h3>Área de contenido principal</h3>
+        <p>Es la zona central donde se muestra la información correspondiente a la sección seleccionada, como tablas de casos, formularios, gráficos o detalles de un expediente.</p>
+        <p>Adicionalmente, si la cuenta corresponde a un administrador general, existe un <strong>Panel Central</strong> donde se gestionan todos los colegios y sostenedores registrados en el sistema.</p>
+        <div class="nota">
+            <span class="titulo-nota">Ayudas en pantalla (tooltips)</span>
+            Muchos campos, botones y títulos del sistema muestran una pequeña explicación al dejar el mouse encima por un segundo. Si no está seguro de qué hace un botón o para qué sirve un campo, pase el cursor sobre él antes de presionarlo.
+        </div>
 
-<h3>5.3 Consultar y filtrar el listado de casos</h3>
-<ol>
-  <li>Ingrese a la sección <strong>Gestión de Casos</strong> desde el panel lateral.</li>
-  <li>Utilice los filtros de estado, categoría y responsable para acotar la búsqueda.</li>
-  <li>Escriba el nombre del estudiante en el campo de búsqueda si desea encontrar un caso específico.</li>
-  <li>Presione el ícono de carpeta junto a un caso para abrir su expediente completo.</li>
-</ol>
+        <!-- ============ 5. DASHBOARD ============ -->
+        <h2 id="dashboard">5. El Dashboard (panel principal)<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>El Dashboard es la pantalla principal y entrega una visión general del estado de los casos del colegio.</p>
 
-<h3>5.4 Registrar acciones en la bitácora de un caso</h3>
-<p>Cada caso cuenta con una bitácora donde se documentan cronológicamente todas las acciones realizadas.</p>
-<ol>
-  <li>Dentro del expediente del caso, utilice el panel de acciones rápidas.</li>
-  <li>Seleccione el tipo de acción que desea registrar: entrevista, seguimiento o medida reparatoria.</li>
-  <li>Complete la fecha y la información solicitada según el tipo de acción.</li>
-  <li>Si se trata de una entrevista a un estudiante, indique si se cuenta con el consentimiento informado del apoderado, o justifique su ausencia cuando corresponda al interés superior del niño.</li>
-  <li>Adjunte un archivo si es necesario respaldar la información.</li>
-  <li>Presione <strong>Guardar</strong> para que la acción quede registrada en la bitácora.</li>
-</ol>
+        <h3 id="dashboard-indicadores">5.1 Indicadores y alertas</h3>
+        <ol>
+            <li>Al ingresar al sistema, observe los indicadores numéricos en la parte superior: total de casos, casos abiertos, casos en seguimiento y casos cerrados.</li>
+            <li>Revise el <strong>Panel de Alertas Críticas</strong>, que muestra los casos que no han tenido actividad reciente y requieren atención prioritaria.</li>
+            <li>Puede usar los filtros globales (categoría y fecha desde) en la parte superior para acotar todos los indicadores y gráficos a un período o tipo de caso específico.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Si el panel de alertas muestra un caso con quince días sin actividad, el funcionario responsable debería ingresar al expediente y registrar una nueva acción de seguimiento ese mismo día.
+        </div>
 
-<h3>5.5 Utilizar el protocolo de actuación</h3>
-<p>Cada caso incorpora automáticamente un protocolo de actuación con los pasos obligatorios y sus plazos asociados, de acuerdo a la normativa vigente.</p>
-<ol>
-  <li>Ingrese al expediente del caso y ubique el panel <strong>Protocolo de Actuación</strong>.</li>
-  <li>Revise cada paso del protocolo junto con su fecha límite.</li>
-  <li>Marque la casilla correspondiente a medida que cada paso se vaya completando.</li>
-  <li>Preste especial atención a los pasos destacados, ya que indican que el plazo se encuentra vencido.</li>
-</ol>
+        <h3 id="dashboard-graficos">5.2 Gráficos y vencimientos</h3>
+        <ol>
+            <li>Observe los gráficos de <strong>Categorías</strong> y <strong>Responsables</strong> para identificar tendencias dentro del establecimiento.</li>
+            <li>Revise el gráfico de <strong>Efectividad de Medidas</strong>, que muestra qué porcentaje de los estudiantes no vuelve a reincidir después de aplicada una medida reparatoria.</li>
+            <li>Revise el listado de <strong>Próximos Vencimientos de Protocolo</strong>, que indica los plazos que están por cumplirse en los próximos 7 días.</li>
+            <li>Revise el panel <strong>Cruce con Metas del PME</strong>, que compara los indicadores actuales del colegio con las metas definidas en Configuración.</li>
+            <li>Use los botones <strong>Enviar Resumen por Email</strong>, <strong>Reporte Superintendencia (CSV)</strong> y <strong>Export Anónimo (CSV)</strong> para compartir esta información hacia afuera del sistema.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Antes de una visita de la Superintendencia de Educación, el encargado de convivencia descarga el "Reporte Superintendencia (CSV)" para entregar la información en el formato que la autoridad exige.
+        </div>
 
-<h3>5.6 Registrar una derivación externa</h3>
-<p>Cuando un caso requiere ser comunicado a una institución externa, como Carabineros, la Fiscalía, la Oficina de Protección de Derechos u otra entidad, esto debe quedar registrado en el sistema.</p>
-<ol>
-  <li>Dentro del expediente, ubique el panel <strong>Derivaciones Externas</strong>.</li>
-  <li>Seleccione la institución y el tipo de derivación, indicando si corresponde a una denuncia obligatoria o a una derivación de apoyo.</li>
-  <li>Ingrese la fecha de la derivación y, si lo tiene, el número de folio entregado por la institución.</li>
-  <li>Agregue notas adicionales si lo considera necesario.</li>
-  <li>Presione <strong>Registrar Derivación</strong>.</li>
-</ol>
-<p>Si un caso corresponde a una posible vulneración de derechos y aún no se ha registrado una denuncia obligatoria, el sistema mostrará un aviso destacado recordando esta obligación legal.</p>
+        <h3 id="dashboard-carga">5.3 Carga de trabajo y reincidencia</h3>
+        <ol>
+            <li>Revise el panel <strong>Carga de Trabajo por Responsable</strong> para ver cuántos casos activos tiene asignado cada miembro del equipo y detectar sobrecarga.</li>
+            <li>Revise el panel <strong>Alertas de Reincidencia</strong>, que muestra estudiantes que abrieron un nuevo caso poco tiempo después de haber cerrado uno anterior.</li>
+            <li>Revise el panel <strong>Capacitaciones por Vencer</strong>, que avisa cuando la vigencia de una capacitación del equipo está por terminar.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El Dashboard muestra que el estudiante Juan Pérez tiene un nuevo caso abierto solo dos meses después de haber cerrado uno por convivencia escolar. Esto aparece en "Alertas de Reincidencia" porque el colegio configuró 6 meses como plazo de alerta, y permite que el equipo revise si el problema de fondo realmente quedó resuelto.
+        </div>
 
-<h3>5.7 Notificar a un apoderado</h3>
-<ol>
-  <li>Dentro del expediente del caso, ubique el panel <strong>Notificar Apoderado</strong>.</li>
-  <li>Seleccione el canal de envío, ya sea correo electrónico, mensaje de texto o mensaje de WhatsApp.</li>
-  <li>Seleccione el idioma del mensaje, en caso de que la familia del estudiante no tenga el español como lengua materna.</li>
-  <li>Ingrese el número de teléfono o el correo del apoderado.</li>
-  <li>Revise o edite el mensaje sugerido.</li>
-  <li>Presione <strong>Enviar Notificación</strong>.</li>
-</ol>
+        <!-- ============ 6. CASOS ============ -->
+        <h2 id="casos">6. Gestión de Casos<a class="volver" href="#indice">↑ volver al índice</a></h2>
 
-<h3>5.8 Cerrar un caso</h3>
-<ol>
-  <li>Dentro del expediente del caso, presione el botón <strong>Cierre de Expediente</strong>.</li>
-  <li>Seleccione la fecha de cierre.</li>
-  <li>Seleccione la resolución final del caso.</li>
-  <li>Escriba una evaluación final que resuma el resultado del proceso.</li>
-  <li>Presione <strong>Cerrar Caso</strong>.</li>
-</ol>
-<p>Una vez cerrado, el caso ya no admite nuevas acciones de bitácora, salvo que sea reabierto por un administrador.</p>
+        <h3 id="casos-crear">6.1 Crear un nuevo caso</h3>
+        <ol>
+            <li>Presione el botón <strong>Nuevo Caso</strong> ubicado en la parte superior de la pantalla.</li>
+            <li>Complete el nombre del <strong>Estudiante Principal</strong>, es decir, el estudiante a cuyo nombre queda el expediente (folio, PDF, notificaciones).</li>
+            <li>Seleccione la fecha de apertura del caso.</li>
+            <li>Si la situación involucra a más de un estudiante (por ejemplo, una pelea o un conflicto entre varios alumnos), escriba el nombre de cada uno en el campo <strong>Otros estudiantes involucrados</strong> y presione <strong>Agregar</strong> (o Enter) para añadirlo como chip; puede agregar tantos como necesite y quitarlos con la "x" antes de guardar.</li>
+            <li>Seleccione la categoría que mejor describe la situación: Convivencia Escolar, Académico / Rendimiento, Asistencia / Deserción, Salud Mental / Emocional o Vulneración de Derechos.</li>
+            <li>Seleccione el profesional responsable principal del caso.</li>
+            <li>Indique el curso del estudiante, si corresponde.</li>
+            <li>Si el estudiante cuenta con necesidades educativas especiales, marque la casilla <strong>Estudiante con NEE</strong> y describa el diagnóstico, recordando que esta información es confidencial.</li>
+            <li>Escriba una descripción inicial clara de la situación.</li>
+            <li>Presione el botón <strong>Aperturar</strong> para guardar el caso.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Ante una situación de agresión verbal entre compañeros de 7° básico, se crea un caso de categoría "Convivencia Escolar" con el primer estudiante como Principal y se agrega al segundo en "Otros estudiantes involucrados", de modo que ambos quedan vinculados al mismo expediente en vez de abrir un caso por cada uno. El sistema busca y detecta reincidencia considerando a todos los estudiantes del caso, no solo al principal. Una vez creado el caso, también se pueden agregar o quitar estudiantes adicionales desde el expediente.
+        </div>
 
-<h3>5.9 Gestionar al equipo del colegio</h3>
-<ol>
-  <li>Ingrese a la sección <strong>Gestor de Equipo</strong> desde el panel lateral.</li>
-  <li>Para agregar un nuevo integrante, complete su nombre, su rol institucional, su especialidad si corresponde, su correo electrónico y el rol de permisos que tendrá dentro del sistema.</li>
-  <li>Defina una contraseña inicial para el nuevo integrante.</li>
-  <li>Presione <strong>Habilitar Integrante</strong>.</li>
-  <li>Para asignar un profesor jefe a un curso, complete el formulario correspondiente indicando el nombre del curso y seleccionando al profesional encargado.</li>
-</ol>
+        <h3 id="casos-filtrar">6.2 Consultar y filtrar el listado</h3>
+        <ol>
+            <li>Ingrese a la sección <strong>Gestión de Casos</strong> desde el panel lateral.</li>
+            <li>Utilice los filtros de estado, categoría y responsable para acotar la búsqueda.</li>
+            <li>Escriba el nombre del estudiante en el campo de búsqueda si desea encontrar un caso específico.</li>
+            <li>Presione el ícono de carpeta junto a un caso para abrir su expediente completo.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El inspector general quiere ver solo los casos abiertos de categoría "Asistencia / Deserción" asignados a él. Selecciona esos dos filtros y el listado se actualiza mostrando únicamente esos casos.
+        </div>
 
-<h3>5.10 Configurar parámetros del colegio</h3>
-<ol>
-  <li>Ingrese a la sección <strong>Configuración</strong>.</li>
-  <li>Ajuste la cantidad de días sin actividad que se considerarán como una alerta crítica.</li>
-  <li>Ajuste la cantidad de días que se conservarán los casos cerrados antes de quedar disponibles para su eliminación definitiva.</li>
-  <li>Registre las metas del Plan de Mejoramiento Educativo que desea monitorear desde el sistema.</li>
-  <li>Presione <strong>Guardar Configuración</strong> para aplicar los cambios.</li>
-</ol>
+        <h3 id="casos-zip">6.3 Exportar expedientes en ZIP</h3>
+        <ol>
+            <li>Aplique los filtros que desee en el listado de casos (estado, categoría, responsable, búsqueda).</li>
+            <li>Presione el botón <strong>Exportar Expedientes Filtrados (ZIP)</strong>.</li>
+            <li>El sistema generará un archivo ZIP con el PDF del expediente de cada caso que cumple los filtros aplicados, y lo descargará automáticamente.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Para una auditoría interna, la directora pide todos los expedientes cerrados del año en formato PDF. El funcionario filtra por estado "Cerrado", presiona "Exportar Expedientes Filtrados (ZIP)" y entrega el archivo descargado, que contiene un PDF por cada caso.
+        </div>
 
-<h2>6. Errores comunes y cómo solucionarlos</h2>
-<ul>
-  <li><strong>Mensaje de credenciales incorrectas al iniciar sesión:</strong> verifique que el ámbito seleccionado corresponda a su colegio, revise que el nombre de usuario esté bien escrito y confirme que la contraseña no tenga espacios adicionales ni errores de mayúsculas y minúsculas.</li>
-  <li><strong>La sesión se cierra de manera inesperada:</strong> esto ocurre cuando la sesión ha permanecido inactiva demasiado tiempo. Vuelva a iniciar sesión con sus credenciales habituales.</li>
-  <li><strong>No aparece el botón para crear o cerrar un caso:</strong> esta función no está disponible para usuarios con permiso de solo lectura. Consulte con el administrador del colegio si necesita permisos adicionales.</li>
-  <li><strong>No es posible guardar un formulario:</strong> revise que todos los campos marcados como obligatorios se encuentren completos antes de presionar el botón de guardar.</li>
-  <li><strong>Se pierde la conexión a internet mientras se registra una entrevista o seguimiento:</strong> el sistema guardará la información en el dispositivo y la enviará automáticamente en cuanto la conexión se restablezca, mostrando un aviso de confirmación.</li>
-  <li><strong>No se visualiza el diagnóstico de un estudiante con necesidades educativas especiales:</strong> esta información es confidencial y solo puede ser vista por administradores o por el profesional con especialidad en Psicólogo PIE.</li>
-</ul>
+        <!-- ============ 7. EXPEDIENTE ============ -->
+        <h2 id="expediente">7. Trabajar dentro de un expediente<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>Al abrir un caso desde el listado, se accede a su <strong>expediente técnico</strong>, donde se concentra toda la información, acciones y documentos relacionados con esa situación.</p>
+        <p>Si el caso tiene más de un estudiante involucrado, junto al nombre del <strong>Estudiante Principal</strong> aparece la lista de <strong>Otros Estudiantes Involucrados</strong>. Mientras el caso esté abierto (y el usuario no sea de rol "invitado"), se puede agregar un nuevo estudiante escribiendo su nombre y presionando <strong>Agregar</strong>, o quitar uno existente presionando la "x" de su chip. El PDF del expediente y la búsqueda de casos siempre incluyen a todos los estudiantes del caso, no solo al principal.</p>
 
-<h2>7. Buenas prácticas de uso</h2>
-<ul>
-  <li>Utilice una contraseña personal y no la comparta con otros funcionarios.</li>
-  <li>Cierre siempre su sesión cuando termine de utilizar el sistema, especialmente si trabaja en un computador compartido.</li>
-  <li>Actualice la bitácora de cada caso apenas se realice una nueva acción, evitando dejar registros pendientes para más adelante.</li>
-  <li>Revise diariamente el panel de alertas críticas y los próximos vencimientos del Dashboard.</li>
-  <li>Trate con especial cuidado y confidencialidad la información sensible, como los antecedentes de necesidades educativas especiales o de vulneración de derechos.</li>
-  <li>Registre siempre las derivaciones externas en el momento en que se realicen, para mantener una trazabilidad completa del caso.</li>
-  <li>Redacte las descripciones y observaciones de manera clara, objetiva y respetuosa, recordando que forman parte de un documento oficial del establecimiento.</li>
-  <li>Verifique los datos de contacto del apoderado antes de enviar una notificación.</li>
-</ul>
+        <h3 id="expediente-bitacora">7.1 Bitácora de seguimiento</h3>
+        <p>Cada caso cuenta con una bitácora donde se documentan cronológicamente todas las acciones realizadas.</p>
+        <ol>
+            <li>Dentro del expediente del caso, utilice el panel de <strong>Acciones Rápidas</strong>.</li>
+            <li>Seleccione el tipo de acción que desea registrar: entrevista, seguimiento o medida reparatoria.</li>
+            <li>Complete la fecha y la información solicitada según el tipo de acción.</li>
+            <li>Si se trata de una entrevista, indique quién fue entrevistado. Puede elegir entre el estudiante, el apoderado, o la opción <strong>Otro</strong> para escribir el nombre de una persona distinta (por ejemplo, un profesor o un testigo).</li>
+            <li>Si es una entrevista a un estudiante, indique si se cuenta con el consentimiento informado del apoderado, o justifique su ausencia cuando corresponda al interés superior del niño.</li>
+            <li>Si registra una medida reparatoria, selecciónela desde el listado del <strong>Catálogo de Medidas Reparatorias</strong> configurado en la sección Convivencia.</li>
+            <li>Adjunte un archivo si es necesario respaldar la información.</li>
+            <li>Presione <strong>Guardar</strong> para que la acción quede registrada en la bitácora.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Tras la entrevista a un estudiante, la psicóloga registra una nueva entrada de tipo "Entrevista", marca que el entrevistado fue el "Estudiante", indica que cuenta con el consentimiento del apoderado, y describe brevemente lo conversado.
+        </div>
 
-<h2>8. Preguntas frecuentes</h2>
+        <h3 id="expediente-mediacion">7.2 Actas de mediación escolar</h3>
+        <p>Cuando dos o más estudiantes participan en un proceso de mediación, el sistema permite registrar un acta formal con los compromisos adquiridos, imprimirla para que las partes la firmen físicamente, y luego conservar el documento firmado como respaldo.</p>
+        <ol>
+            <li>Dentro del expediente, ubique el panel de <strong>Actas de Mediación Escolar</strong>.</li>
+            <li>Indique la fecha de la mediación.</li>
+            <li>Escriba el nombre de los participantes.</li>
+            <li>Describa el acuerdo alcanzado entre las partes.</li>
+            <li>Agregue uno o más compromisos, indicando la descripción, el responsable de cumplirlo y, si corresponde, una fecha límite.</li>
+            <li>Presione <strong>Registrar Acta de Mediación</strong>.</li>
+            <li>Presione <strong>Imprimir acta para firmar</strong> para descargar un PDF del acta con espacios de firma para el mediador y los participantes.</li>
+            <li>Una vez impresa, firmada a mano y escaneada o fotografiada, presione <strong>Subir acta firmada</strong> para adjuntarla al sistema como medio de verificación.</li>
+            <li>Más adelante, puede marcar cada compromiso como <strong>cumplido</strong> a medida que se vaya verificando.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Dos estudiantes que tuvieron un conflicto firman un acuerdo de mediación en el que se comprometen a pedirse disculpas públicamente. El orientador registra el acta, descarga el PDF, lo imprime para que ambos estudiantes y el mediador firmen, escanea el documento firmado y lo sube como medio de verificación. Dos semanas después marca el compromiso "Disculpa pública" como cumplido tras confirmar que ocurrió.
+        </div>
 
-<h3>Olvidé mi contraseña, qué debo hacer</h3>
-<p>Debe contactar al administrador de su colegio o al administrador general del sistema, quien podrá restablecer sus credenciales de acceso.</p>
+        <h3 id="expediente-protocolo">7.3 Protocolo de actuación</h3>
+        <p>Cada caso incorpora automáticamente un protocolo de actuación con los pasos obligatorios y sus plazos asociados, de acuerdo a la normativa vigente o al protocolo personalizado que el colegio haya definido en la sección Convivencia.</p>
+        <ol>
+            <li>Ingrese al expediente del caso y ubique el panel <strong>Protocolo de Actuación</strong>.</li>
+            <li>Revise cada paso del protocolo junto con su fecha límite.</li>
+            <li>Marque la casilla correspondiente a medida que cada paso se vaya completando.</li>
+            <li>Preste especial atención a los pasos destacados, ya que indican que el plazo se encuentra vencido.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Un caso de Convivencia Escolar incluye automáticamente el paso "Entrevistar a las partes involucradas" con un plazo de 5 días. Si pasan 6 días sin marcar este paso como completado, aparecerá destacado en rojo tanto en el expediente como en el panel de "Próximos Vencimientos" del Dashboard.
+        </div>
 
-<h3>Puedo acceder al sistema desde mi teléfono celular</h3>
-<p>Sí, el sistema puede utilizarse desde un navegador web en computadores, tablets y teléfonos celulares.</p>
+        <h3 id="expediente-derivacion">7.4 Derivaciones externas</h3>
+        <p>Cuando un caso requiere ser comunicado a una institución externa, como Carabineros, la Fiscalía, la OLN (Oficina Local de la Niñez) u otra entidad, esto debe quedar registrado en el sistema.</p>
+        <ol>
+            <li>Dentro del expediente, ubique el panel <strong>Derivaciones Externas</strong>.</li>
+            <li>Seleccione la institución y el tipo de derivación, indicando si corresponde a una denuncia obligatoria o a una derivación de apoyo.</li>
+            <li>Ingrese la fecha de la derivación y, si lo tiene, el número de folio entregado por la institución.</li>
+            <li>Agregue notas adicionales si lo considera necesario.</li>
+            <li>Presione <strong>Registrar Derivación</strong>.</li>
+            <li>Una vez registrada, puede presionar <strong>Adjuntar archivo(s)</strong> para subir uno o más documentos (oficio recibido, comprobante de denuncia, correo de respuesta, etc.) que queden como <strong>medio de verificación</strong> de esa derivación.</li>
+        </ol>
+        <div class="advertencia">
+            <span class="titulo-advertencia">Importante</span>
+            Si un caso corresponde a una posible vulneración de derechos y aún no se ha registrado una denuncia obligatoria, el sistema mostrará un aviso destacado recordando esta obligación legal hasta que la derivación quede registrada.
+        </div>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Un caso de vulneración de derechos requiere ser denunciado a Carabineros. El equipo realiza la denuncia presencialmente, obtiene el número de parte policial, lo ingresa en "Derivaciones Externas" seleccionando "Carabineros" y "Denuncia obligatoria", y además adjunta una foto o escaneo del comprobante de denuncia como medio de verificación. El aviso pendiente desaparece automáticamente.
+        </div>
 
-<h3>Qué ocurre si intento crear un caso sin estar conectado a internet</h3>
-<p>La creación de un nuevo caso requiere conexión a internet. Sin embargo, el registro de nuevas entradas de bitácora en un caso ya existente puede guardarse temporalmente sin conexión y se sincronizará de forma automática.</p>
+        <h3 id="expediente-cierre">7.5 Cerrar el caso</h3>
+        <ol>
+            <li>Dentro del expediente del caso, presione el botón <strong>Cierre de Expediente</strong>.</li>
+            <li>Seleccione la fecha de cierre.</li>
+            <li>Seleccione la resolución final del caso.</li>
+            <li>Escriba una evaluación final que resuma el resultado del proceso.</li>
+            <li>Presione <strong>Cerrar Caso</strong>.</li>
+        </ol>
+        <div class="nota">
+            <span class="titulo-nota">Qué pasa después del cierre</span>
+            Una vez cerrado, el caso ya no admite nuevas acciones de bitácora, salvo que sea reabierto por un administrador. El caso permanecerá disponible para consulta hasta que se cumpla el plazo de retención configurado, momento en el cual quedará disponible para su purga definitiva.
+        </div>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Tras resolver satisfactoriamente un conflicto de convivencia mediante mediación, el responsable cierra el caso con resolución "Resuelto mediante mediación" y una evaluación final que describe el acuerdo alcanzado y su cumplimiento.
+        </div>
 
-<h3>Quién puede ver la información confidencial de un estudiante con necesidades educativas especiales</h3>
-<p>Únicamente los usuarios con rol de administrador o aquellos cuya especialidad corresponda a Psicólogo PIE podrán visualizar esta información. El resto de los usuarios verá un mensaje indicando que la información es confidencial.</p>
+        <!-- ============ 8. EQUIPO ============ -->
+        <h2 id="equipo">8. Gestor de Equipo<a class="volver" href="#indice">↑ volver al índice</a></h2>
 
-<h3>Puedo cambiar al responsable principal de un caso después de haberlo creado</h3>
-<p>Sí, un administrador puede editar el caso y modificar el responsable principal asignado.</p>
+        <h3 id="equipo-agregar">8.1 Agregar un integrante</h3>
+        <ol>
+            <li>Ingrese a la sección <strong>Gestor de Equipo</strong> desde el panel lateral.</li>
+            <li>Complete el nombre completo y el rol institucional (por ejemplo, "Psicólogo Escolar").</li>
+            <li>Seleccione la especialidad, si corresponde: Encargado de Convivencia Escolar, Psicólogo PIE, Inspector General, Trabajador Social, Orientador u Otro.</li>
+            <li>Ingrese su correo electrónico, para que pueda recibir notificaciones del sistema.</li>
+            <li>Ingrese el nombre de usuario que utilizará para iniciar sesión, o déjelo en blanco para que el sistema lo genere automáticamente.</li>
+            <li>Seleccione el <strong>Rol de Permisos</strong>: Administrador (gestiona equipo y casos), Funcionario (opera casos) o Invitado (solo lectura).</li>
+            <li>Defina una contraseña personal de firma para el nuevo integrante.</li>
+            <li>Presione <strong>Habilitar Integrante</strong>.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Se incorpora una nueva psicóloga al equipo PIE. Se le asigna la especialidad "Psicólogo PIE" (lo que le permitirá ver los diagnósticos confidenciales de estudiantes con NEE) y el rol de permisos "Funcionario", ya que no necesita administrar al resto del equipo.
+        </div>
 
-<h3>Qué debo hacer si el sistema muestra un aviso de denuncia obligatoria pendiente</h3>
-<p>Este aviso indica que el caso corresponde a una posible vulneración de derechos y que, según la normativa vigente, corresponde realizar una denuncia ante la autoridad competente. Una vez realizada, debe registrarla en el panel de derivaciones externas para que el aviso desaparezca.</p>
+        <h3 id="equipo-capacitaciones">8.2 Capacitaciones del equipo</h3>
+        <ol>
+            <li>En la nómina del equipo, presione el botón <strong>Capacitaciones</strong> junto al integrante correspondiente.</li>
+            <li>Ingrese el nombre de la capacitación, la institución que la otorgó, la fecha de obtención y, si corresponde, la fecha de vencimiento.</li>
+            <li>Presione <strong>Agregar Capacitación</strong>.</li>
+            <li>El sistema avisará automáticamente en el Dashboard cuando una capacitación esté próxima a vencer (dentro de 60 días).</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Un inspector general realizó el curso "Primeros Auxilios Psicológicos" dictado por MINEDUC, con vigencia de un año. Se registra la capacitación con su fecha de vencimiento, y dos meses antes de vencer aparecerá en el panel "Capacitaciones por Vencer" del Dashboard.
+        </div>
 
-<h3>Puedo recuperar un caso que fue cerrado por error</h3>
-<p>Debe solicitar a un administrador del colegio que revise el caso, ya que la reapertura de expedientes cerrados es una acción restringida.</p>
+        <h3 id="equipo-profesores">8.3 Profesores jefe por curso</h3>
+        <ol>
+            <li>En la sección <strong>Profesores Jefe por Curso</strong>, escriba el nombre del curso (por ejemplo, "7° Básico A").</li>
+            <li>Seleccione al profesional encargado de ese curso.</li>
+            <li>Presione <strong>Agregar</strong>.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Al asignar a la profesora Marcela como profesora jefe de "5° Básico B", cualquier caso nuevo que se abra para un estudiante de ese curso la notificará automáticamente, incluso si ella no es la responsable principal del caso.
+        </div>
 
-<h2>9. Glosario de términos</h2>
-<ul>
-  <li><strong>Caso:</strong> expediente que documenta una situación particular de un estudiante y todo su proceso de seguimiento hasta su cierre.</li>
-  <li><strong>Folio:</strong> número único que identifica a cada caso dentro de un colegio.</li>
-  <li><strong>Bitácora:</strong> registro cronológico de todas las acciones realizadas dentro de un caso, como entrevistas, seguimientos, medidas y cierres.</li>
-  <li><strong>Categoría:</strong> clasificación de un caso según el tipo de situación, como Convivencia Escolar, Académico, Asistencia, Salud Mental o Vulneración de Derechos.</li>
-  <li><strong>Estado:</strong> situación actual de un caso, que puede ser Abierto, En Seguimiento o Cerrado.</li>
-  <li><strong>Responsable principal:</strong> profesional encargado de gestionar y dar seguimiento a un caso específico.</li>
-  <li><strong>Colegio:</strong> establecimiento educacional registrado dentro del sistema, con su propio equipo y sus propios casos.</li>
-  <li><strong>RBD:</strong> código oficial que identifica a un establecimiento educacional ante las autoridades de educación.</li>
-  <li><strong>Sostenedor:</strong> entidad responsable de uno o más colegios dentro del sistema.</li>
-  <li><strong>Protocolo de actuación:</strong> conjunto de pasos obligatorios y plazos asociados que deben seguirse según el tipo de caso.</li>
-  <li><strong>Derivación externa:</strong> comunicación formal de un caso a una institución fuera del colegio, como Carabineros, la Fiscalía o una oficina de protección de derechos.</li>
-  <li><strong>Denuncia obligatoria:</strong> comunicación que el establecimiento está legalmente obligado a realizar ante una autoridad competente frente a determinadas situaciones graves.</li>
-  <li><strong>PIE:</strong> Programa de Integración Escolar, destinado a estudiantes con necesidades educativas especiales.</li>
-  <li><strong>NEE:</strong> Necesidades Educativas Especiales que puede presentar un estudiante.</li>
-  <li><strong>JUNAEB:</strong> beneficios y programas de apoyo estudiantil, como becas o alimentación escolar, asociados a un estudiante.</li>
-  <li><strong>Especialidad:</strong> función profesional específica de un integrante del equipo, como Psicólogo PIE, Encargado de Convivencia Escolar o Inspector General.</li>
-  <li><strong>Rol de permisos:</strong> nivel de acceso de un usuario dentro del sistema, que puede ser Administrador, Funcionario o Invitado.</li>
-  <li><strong>Plan de Mejoramiento Educativo:</strong> instrumento de planificación del establecimiento cuyas metas pueden compararse con los indicadores que entrega el sistema.</li>
-</ul>
+        <!-- ============ 9. CONVIVENCIA ============ -->
+        <h2 id="convivencia">9. Convivencia Escolar<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>Esta sección reúne las herramientas preventivas y de gestión de la convivencia escolar del colegio: actividades realizadas, medidas reparatorias disponibles y protocolos de actuación personalizados.</p>
+
+        <h3 id="convivencia-actividades">9.1 Actividades de convivencia</h3>
+        <ol>
+            <li>Ingrese a la sección <strong>Convivencia</strong> desde el panel lateral.</li>
+            <li>En el panel <strong>Actividades de Convivencia Escolar</strong>, ingrese el nombre de la actividad.</li>
+            <li>Seleccione el tipo: Taller, Charla, Capacitación u Otro.</li>
+            <li>Seleccione la fecha en que se realizó o se realizará la actividad.</li>
+            <li>Agregue una descripción opcional.</li>
+            <li>Presione <strong>Agregar Actividad</strong>.</li>
+        </ol>
+        <div class="nota">
+            <span class="titulo-nota">Diferencia con un caso</span>
+            Las actividades de convivencia son acciones preventivas dirigidas a todo un curso o al colegio en general (como un taller sobre resolución de conflictos), distintas de los casos individuales que se gestionan en "Gestión de Casos".
+        </div>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El colegio organiza un "Taller de Resolución de Conflictos" para todo 7° básico. Se registra como actividad de tipo "Taller", con la fecha en que se realizó y una breve descripción de su contenido, quedando como respaldo documental ante una eventual fiscalización.
+        </div>
+        <p>Cada actividad registrada cuenta además con su propia <strong>bitácora de seguimiento</strong>, un <strong>cierre formal</strong>, la posibilidad de adjuntar <strong>medios de verificación</strong> y un <strong>resumen en PDF</strong> para imprimir o archivar:</p>
+        <ol>
+            <li>En el listado de actividades, presione <strong>Ver bitácora / cierre</strong> sobre la actividad que desea revisar para expandir su detalle.</li>
+            <li>En la sección <strong>Bitácora de Seguimiento</strong>, agregue una fecha y una breve descripción cada vez que haya un avance que registrar (por ejemplo, la asistencia real, observaciones del relator, incidencias durante la actividad).</li>
+            <li>En la sección <strong>Medios de Verificación</strong>, presione <strong>Adjuntar archivo(s)</strong> para subir una o varias fotografías, listas de asistencia escaneadas u otros documentos que respalden que la actividad se realizó.</li>
+            <li>Presione <strong>Descargar / imprimir resumen PDF</strong> en cualquier momento para obtener un documento con los datos de la actividad, su bitácora de seguimiento y el estado de cierre, útil para adjuntar a un informe o entregar a la dirección.</li>
+            <li>Cuando la actividad haya finalizado, presione <strong>Cerrar Actividad</strong>, indique la fecha de cierre y escriba una evaluación final (resultados, asistencia, observaciones).</li>
+        </ol>
+        <div class="nota">
+            <span class="titulo-nota">Actividad cerrada</span>
+            Una vez cerrada, la actividad muestra una etiqueta <strong>Cerrada</strong> en el listado junto con la fecha y la evaluación final. El usuario invitado puede ver toda esta información, pero no puede agregar bitácora, adjuntar archivos ni cerrar actividades.
+        </div>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Tras el "Taller de Resolución de Conflictos", la encargada de convivencia registra en la bitácora de la actividad que asistieron 32 de 35 estudiantes, sube una foto de la lista de asistencia firmada como medio de verificación, y al finalizar la jornada cierra la actividad con la evaluación "Taller realizado con buena participación, sin incidentes". Luego descarga el PDF resumen para adjuntarlo al informe mensual de convivencia escolar.
+        </div>
+
+        <h3 id="convivencia-medidas">9.2 Catálogo de medidas reparatorias</h3>
+        <p>Este catálogo define las medidas reparatorias disponibles para ser aplicadas dentro de la bitácora de cualquier caso. Solo los administradores pueden modificarlo.</p>
+        <ol>
+            <li>En el panel <strong>Catálogo de Medidas Reparatorias</strong>, escriba el nombre de la nueva medida.</li>
+            <li>Presione <strong>Agregar</strong>.</li>
+            <li>Puede <strong>Desactivar</strong> una medida que ya no se utilice sin perder el historial de los casos donde ya fue aplicada, o <strong>Eliminar</strong>la definitivamente.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El equipo decide incorporar "Servicio Comunitario Escolar" como nueva medida reparatoria. La agrega al catálogo, y desde ese momento aparece disponible como opción al registrar una medida reparatoria en cualquier caso del colegio.
+        </div>
+
+        <h3 id="convivencia-protocolos">9.3 Protocolos de actuación personalizados</h3>
+        <p>Por defecto, cada categoría de caso usa un protocolo de actuación global definido por el sistema. Un administrador puede personalizar los pasos para adaptarlos a la realidad de su colegio.</p>
+        <ol>
+            <li>En el panel <strong>Protocolos de Actuación Personalizados</strong>, ubique la categoría que desea modificar.</li>
+            <li>Presione <strong>Personalizar</strong>.</li>
+            <li>Edite el nombre del protocolo, la normativa asociada y los pasos, indicando la descripción y el plazo en días de cada uno.</li>
+            <li>Presione <strong>Guardar</strong> dentro de la ventana de edición.</li>
+            <li>Si en algún momento desea volver a usar el protocolo global, presione <strong>Restablecer</strong>.</li>
+        </ol>
+        <div class="advertencia">
+            <span class="titulo-advertencia">Importante</span>
+            Solo los administradores del colegio pueden personalizar o restablecer protocolos. Los casos nuevos usarán automáticamente la versión vigente (personalizada o global) al momento de su creación; los casos ya abiertos conservan el protocolo que tenían asignado originalmente.
+        </div>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El colegio decide que, para los casos de Convivencia Escolar, el primer paso del protocolo debe completarse en 3 días en lugar de los 5 días del protocolo global, debido a un acuerdo interno con el Consejo Escolar. El administrador personaliza ese paso, y todos los casos nuevos de esa categoría aplicarán el nuevo plazo.
+        </div>
+
+        <!-- ============ 10. CONFIGURACIÓN ============ -->
+        <h2 id="configuracion">10. Configuración del colegio<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>Esta sección reúne los parámetros generales de funcionamiento del colegio dentro del sistema. Solo un administrador puede modificarla.</p>
+
+        <h3 id="config-alerta">10.1 Umbral de alerta crítica</h3>
+        <ol>
+            <li>Ingrese a la sección <strong>Configuración</strong>.</li>
+            <li>Ajuste la cantidad de días sin actividad que se considerarán como una alerta crítica.</li>
+            <li>Ajuste la cantidad de meses dentro de los cuales un nuevo caso del mismo estudiante se considerará reincidencia.</li>
+            <li>Presione <strong>Guardar Configuración</strong> para aplicar los cambios.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El colegio decide que 10 días sin actividad es demasiado tiempo de espera y baja el umbral a 7 días, logrando que el equipo reaccione más rápido ante casos abandonados.
+        </div>
+
+        <h3 id="config-purga">10.2 Retención y purga de datos</h3>
+        <ol>
+            <li>Ajuste la cantidad de días que se conservarán los casos cerrados antes de quedar disponibles para su eliminación definitiva, de acuerdo a la Ley 19.628 y 21.719 sobre protección de datos personales.</li>
+            <li>Revise el listado de casos que ya cumplieron ese plazo y están disponibles para purga.</li>
+            <li>Presione <strong>Purgar casos elegibles</strong> para eliminarlos definitivamente.</li>
+        </ol>
+        <div class="advertencia">
+            <span class="titulo-advertencia">Importante</span>
+            La purga de casos es una acción irreversible. Antes de purgar, asegúrese de haber exportado en PDF o ZIP cualquier expediente que deba conservarse por otros motivos legales o administrativos.
+        </div>
+
+        <h3 id="config-pme">10.3 Metas del PME</h3>
+        <ol>
+            <li>Seleccione el indicador que desea monitorear: tasa de éxito de medidas aplicadas, porcentaje de casos cerrados o cantidad de casos de Convivencia Escolar abiertos.</li>
+            <li>Ingrese el valor meta y una descripción opcional.</li>
+            <li>Presione <strong>Agregar Meta PME</strong>.</li>
+            <li>Las metas registradas se compararán automáticamente con los datos reales en el panel "Cruce con Metas del PME" del Dashboard.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El Plan de Mejoramiento Educativo del colegio fija como meta que el 80% de los casos de convivencia se cierren dentro del año escolar. Se registra esta meta en el sistema y el Dashboard mostrará automáticamente si el colegio va cumpliendo ese objetivo.
+        </div>
+
+        <h3 id="config-auditoria">10.4 Registro de auditoría</h3>
+        <p>Visible solo para administradores, este panel muestra un historial de las acciones administrativas relevantes realizadas dentro del sistema: creación de casos, cambios de configuración, gestión de usuarios, entre otras.</p>
+        <ol>
+            <li>Ingrese a la sección <strong>Configuración</strong> y revise el panel <strong>Registro de Auditoría</strong>.</li>
+            <li>Revise la fecha, el usuario, la acción y el detalle de cada registro.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Ante la duda de quién cerró un caso por error, la directora revisa el Registro de Auditoría y encuentra la acción "casos.cerrar" registrada con el usuario, la fecha y la hora exactas en que ocurrió.
+        </div>
+
+        <!-- ============ 11. PANEL CENTRAL ============ -->
+        <h2 id="central">11. Panel Central (administración general)<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>Esta sección solo está disponible para el administrador general del sistema, quien gestiona todos los colegios y sostenedores registrados.</p>
+
+        <h3 id="central-colegios">11.1 Crear y editar colegios</h3>
+        <ol>
+            <li>En el panel <strong>Crear Colegio</strong>, ingrese el nombre del establecimiento.</li>
+            <li>Ingrese el RBD (código oficial entregado por MINEDUC), si lo tiene.</li>
+            <li>Seleccione el sostenedor al que pertenece, si corresponde.</li>
+            <li>Ingrese la comuna y la dirección.</li>
+            <li>Presione <strong>Crear Colegio</strong>.</li>
+            <li>Para editar un colegio existente, presione el botón de edición en la tabla <strong>Colegios Registrados</strong>.</li>
+            <li>Dentro de la ventana de edición, puede cargar opcionalmente el <strong>logo del colegio</strong> como imagen. Este logo se mostrará de forma pequeña y responsiva en el pie del panel lateral cuando alguien inicie sesión en ese colegio.</li>
+            <li>Puede <strong>desactivar</strong> un colegio si deja de operar, lo que impedirá que sus usuarios inicien sesión sin perder la información histórica.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Se incorpora al sistema un nuevo colegio, "Liceo Bicentenario", con su RBD oficial y asociado al sostenedor "Fundación Educacional Ejemplo". Luego se sube su logo institucional, que aparecerá en el pie de la barra lateral cada vez que un funcionario de ese colegio inicie sesión.
+        </div>
+
+        <h3 id="central-sostenedores">11.2 Sostenedores</h3>
+        <ol>
+            <li>En el panel <strong>Sostenedores</strong>, ingrese el nombre del sostenedor y, opcionalmente, su RUT.</li>
+            <li>Presione <strong>Agregar Sostenedor</strong>.</li>
+            <li>Un mismo sostenedor puede estar asociado a varios colegios dentro del sistema.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Una corporación municipal administra cuatro colegios de la misma comuna. Se registra una sola vez como sostenedor, y luego se asocia a cada uno de los cuatro colegios al crearlos o editarlos.
+        </div>
+
+        <!-- ============ 12. ERRORES ============ -->
+        <h2 id="errores">12. Errores comunes y cómo solucionarlos<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <table>
+            <tr><th>Situación</th><th>Cómo solucionarlo</th></tr>
+            <tr>
+                <td>Mensaje de credenciales incorrectas al iniciar sesión</td>
+                <td>Verifique que el ámbito seleccionado corresponda a su colegio, revise que el nombre de usuario esté bien escrito y confirme que la contraseña no tenga espacios adicionales ni errores de mayúsculas y minúsculas.</td>
+            </tr>
+            <tr>
+                <td>La sesión se cierra de manera inesperada</td>
+                <td>Esto ocurre cuando la sesión ha permanecido inactiva demasiado tiempo. Vuelva a iniciar sesión con sus credenciales habituales.</td>
+            </tr>
+            <tr>
+                <td>No aparece el botón para crear o cerrar un caso</td>
+                <td>Esta función no está disponible para usuarios con rol de permisos "Invitado" (solo lectura). Consulte con el administrador del colegio si necesita permisos adicionales.</td>
+            </tr>
+            <tr>
+                <td>No es posible guardar un formulario</td>
+                <td>Revise que todos los campos marcados con asterisco (*) se encuentren completos antes de presionar el botón de guardar.</td>
+            </tr>
+            <tr>
+                <td>Se pierde la conexión a internet mientras se registra una entrevista o seguimiento</td>
+                <td>El sistema guardará la información en el dispositivo y la enviará automáticamente en cuanto la conexión se restablezca, mostrando un aviso de confirmación.</td>
+            </tr>
+            <tr>
+                <td>No se visualiza el diagnóstico de un estudiante con necesidades educativas especiales</td>
+                <td>Esta información es confidencial y solo puede ser vista por administradores o por el profesional con especialidad "Psicólogo PIE".</td>
+            </tr>
+            <tr>
+                <td>No aparecen los botones de "Personalizar" o "Restablecer" en un protocolo</td>
+                <td>Solo los administradores pueden modificar los protocolos de actuación. Si su rol es "Funcionario" o "Invitado", estos botones no se mostrarán.</td>
+            </tr>
+            <tr>
+                <td>La página se ve "vieja" después de una actualización del sistema</td>
+                <td>Cierre todas las pestañas del sistema y vuelva a abrirlo, o recargue la página manteniendo presionada la tecla Shift, para asegurarse de cargar la última versión.</td>
+            </tr>
+        </table>
+
+        <!-- ============ 13. BUENAS PRÁCTICAS ============ -->
+        <h2 id="buenas-practicas">13. Buenas prácticas de uso<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <ul>
+            <li>Utilice una contraseña personal y no la comparta con otros funcionarios.</li>
+            <li>Cierre siempre su sesión cuando termine de utilizar el sistema, especialmente si trabaja en un computador compartido.</li>
+            <li>Actualice la bitácora de cada caso apenas se realice una nueva acción, evitando dejar registros pendientes para más adelante.</li>
+            <li>Revise diariamente el panel de alertas críticas, la carga de trabajo y los próximos vencimientos del Dashboard.</li>
+            <li>Trate con especial cuidado y confidencialidad la información sensible, como los antecedentes de necesidades educativas especiales o de vulneración de derechos.</li>
+            <li>Registre siempre las derivaciones externas en el momento en que se realicen, para mantener una trazabilidad completa del caso.</li>
+            <li>Redacte las descripciones y observaciones de manera clara, objetiva y respetuosa, recordando que forman parte de un documento oficial del establecimiento.</li>
+            <li>Adjunte siempre los medios de verificación disponibles (fotos, listas de asistencia, comprobantes, actas firmadas) en derivaciones, mediaciones y actividades de convivencia.</li>
+            <li>Mantenga actualizado el catálogo de medidas reparatorias y los protocolos personalizados según los acuerdos vigentes del Consejo Escolar.</li>
+            <li>Pase el cursor sobre los íconos de ayuda (tooltips) cuando no esté seguro del propósito de un campo o botón, antes de modificarlo.</li>
+        </ul>
+
+        <!-- ============ 14. FAQ ============ -->
+        <h2 id="faq">14. Preguntas frecuentes<a class="volver" href="#indice">↑ volver al índice</a></h2>
+
+        <h3>Olvidé mi contraseña, qué debo hacer</h3>
+        <p>Debe contactar al administrador de su colegio o al administrador general del sistema, quien podrá restablecer sus credenciales de acceso.</p>
+
+        <h3>Puedo acceder al sistema desde mi teléfono celular</h3>
+        <p>Sí, el sistema puede utilizarse desde un navegador web en computadores, tablets y teléfonos celulares.</p>
+
+        <h3>Qué ocurre si intento crear un caso sin estar conectado a internet</h3>
+        <p>La creación de un nuevo caso requiere conexión a internet. Sin embargo, el registro de nuevas entradas de bitácora en un caso ya existente puede guardarse temporalmente sin conexión y se sincronizará de forma automática.</p>
+
+        <h3>Quién puede ver la información confidencial de un estudiante con necesidades educativas especiales</h3>
+        <p>Únicamente los usuarios con rol de administrador o aquellos cuya especialidad corresponda a Psicólogo PIE podrán visualizar esta información. El resto de los usuarios verá un mensaje indicando que la información es confidencial.</p>
+
+        <h3>Puedo cambiar al responsable principal de un caso después de haberlo creado</h3>
+        <p>Sí, un administrador puede editar el caso y modificar el responsable principal asignado.</p>
+
+        <h3>Qué debo hacer si el sistema muestra un aviso de denuncia obligatoria pendiente</h3>
+        <p>Este aviso indica que el caso corresponde a una posible vulneración de derechos y que, según la normativa vigente, corresponde realizar una denuncia ante la autoridad competente. Una vez realizada, debe registrarla en el panel de derivaciones externas para que el aviso desaparezca.</p>
+
+        <h3>Puedo recuperar un caso que fue cerrado por error</h3>
+        <p>Debe solicitar a un administrador del colegio que revise el caso, ya que la reapertura de expedientes cerrados es una acción restringida.</p>
+
+        <h3>Qué pasa si elimino a un usuario que tiene casos asignados</h3>
+        <p>El sistema le advertirá y le pedirá seleccionar a otra persona del equipo para reasignar esos casos antes de completar la eliminación. Esa reasignación queda registrada automáticamente en el sistema.</p>
+
+        <h3>Qué diferencia hay entre una actividad de convivencia y un caso</h3>
+        <p>Un caso documenta una situación particular de uno o más estudiantes específicos. Una actividad de convivencia es una acción preventiva general, como un taller o una charla, dirigida a un curso o al colegio completo, y no requiere estar asociada a un caso individual.</p>
+
+        <h3>Puedo personalizar el protocolo de actuación de mi colegio</h3>
+        <p>Sí, un administrador puede personalizar los pasos y plazos del protocolo para cualquier categoría desde la sección Convivencia. Si no se personaliza, se utiliza automáticamente el protocolo global del sistema.</p>
+
+        <!-- ============ 15. GLOSARIO ============ -->
+        <h2 id="glosario">15. Glosario de términos<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <table>
+            <tr><th>Término</th><th>Significado</th></tr>
+            <tr><td><strong>Caso</strong></td><td>Expediente que documenta una situación particular de un estudiante y todo su proceso de seguimiento hasta su cierre.</td></tr>
+            <tr><td><strong>Folio</strong></td><td>Número único que identifica a cada caso dentro de un colegio.</td></tr>
+            <tr><td><strong>Bitácora</strong></td><td>Registro cronológico de todas las acciones realizadas dentro de un caso, como entrevistas, seguimientos, medidas y cierres.</td></tr>
+            <tr><td><strong>Categoría</strong></td><td>Clasificación de un caso según el tipo de situación: Convivencia Escolar, Académico, Asistencia, Salud Mental o Vulneración de Derechos.</td></tr>
+            <tr><td><strong>Estado</strong></td><td>Situación actual de un caso: Abierto, En Seguimiento o Cerrado.</td></tr>
+            <tr><td><strong>Responsable principal</strong></td><td>Profesional encargado de gestionar y dar seguimiento a un caso específico.</td></tr>
+            <tr><td><strong>Colegio</strong></td><td>Establecimiento educacional registrado dentro del sistema, con su propio equipo y sus propios casos.</td></tr>
+            <tr><td><strong>RBD</strong></td><td>Rol Base de Datos: código oficial que identifica a un establecimiento educacional ante MINEDUC.</td></tr>
+            <tr><td><strong>Sostenedor</strong></td><td>Entidad responsable de uno o más colegios dentro del sistema.</td></tr>
+            <tr><td><strong>Protocolo de actuación</strong></td><td>Conjunto de pasos obligatorios y plazos asociados que deben seguirse según el tipo de caso, ya sea el protocolo global o uno personalizado por el colegio.</td></tr>
+            <tr><td><strong>Derivación externa</strong></td><td>Comunicación formal de un caso a una institución fuera del colegio, como Carabineros, la Fiscalía o la OLN.</td></tr>
+            <tr><td><strong>OLN</strong></td><td>Oficina Local de la Niñez: institución de la red de protección a la que se puede derivar un caso, antes llamada OPD (Oficina de Protección de Derechos).</td></tr>
+            <tr><td><strong>Denuncia obligatoria</strong></td><td>Comunicación que el establecimiento está legalmente obligado a realizar ante una autoridad competente frente a determinadas situaciones graves.</td></tr>
+            <tr><td><strong>Mediación escolar</strong></td><td>Proceso formal de resolución de conflictos entre estudiantes, registrado mediante un acta con compromisos y responsables, que puede imprimirse para ser firmada físicamente.</td></tr>
+            <tr><td><strong>Medida reparatoria</strong></td><td>Acción aplicada a un estudiante con el fin de reparar el daño causado por una situación de convivencia, seleccionada desde un catálogo configurable.</td></tr>
+            <tr><td><strong>Medio de verificación</strong></td><td>Archivo (foto, documento escaneado, lista de asistencia, acta firmada) que se adjunta a una derivación, una mediación o una actividad de convivencia como respaldo de que la acción realmente ocurrió.</td></tr>
+            <tr><td><strong>Reincidencia</strong></td><td>Apertura de un nuevo caso para un mismo estudiante dentro de un plazo cercano al cierre de un caso anterior.</td></tr>
+            <tr><td><strong>PIE</strong></td><td>Programa de Integración Escolar, destinado a estudiantes con necesidades educativas especiales.</td></tr>
+            <tr><td><strong>NEE</strong></td><td>Necesidades Educativas Especiales que puede presentar un estudiante.</td></tr>
+            <tr><td><strong>JUNAEB</strong></td><td>Beneficios y programas de apoyo estudiantil, como becas o alimentación escolar, asociados a un estudiante.</td></tr>
+            <tr><td><strong>Especialidad</strong></td><td>Función profesional específica de un integrante del equipo, como Psicólogo PIE, Encargado de Convivencia Escolar o Inspector General.</td></tr>
+            <tr><td><strong>Rol de permisos</strong></td><td>Nivel de acceso de un usuario dentro del sistema: <span class="badge-rol">Administrador</span>, <span class="badge-rol">Funcionario</span> o <span class="badge-rol">Invitado</span>.</td></tr>
+            <tr><td><strong>Plan de Mejoramiento Educativo (PME)</strong></td><td>Instrumento de planificación del establecimiento cuyas metas pueden compararse con los indicadores que entrega el sistema.</td></tr>
+            <tr><td><strong>Auditoría</strong></td><td>Registro histórico de acciones administrativas relevantes realizadas dentro del sistema, visible solo para administradores.</td></tr>
+            <tr><td><strong>Tooltip</strong></td><td>Pequeño mensaje de ayuda que aparece al dejar el mouse sobre un campo, botón o título, explicando su propósito.</td></tr>
+        </table>
+
+        <footer class="pie">
+            Manual de Usuario del Sistema de Gestión de Casos Estudiantiles (SGE) — Documento de referencia interna.
+        </footer>
+
+    </main>
+</div>
+</body>
+</html>

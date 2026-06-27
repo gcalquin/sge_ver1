@@ -81,4 +81,24 @@ const eliminarMetaPme = asyncHandler(async (req, res) => {
     res.json({ ok: true });
 });
 
-module.exports = { superintendencia, superintendenciaCsv, listarMetasPme, crearMetaPme, eliminarMetaPme };
+const listarAuditoria = asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+        `SELECT a.id, a.accion, a.detalle, a.ip, a.created_at AS "creadoEn", u.nombre AS usuario
+         FROM auditoria a
+         LEFT JOIN usuarios u ON u.id = a.usuario_id
+         WHERE a.colegio_id = $1
+         ORDER BY a.id DESC
+         LIMIT 200`,
+        [req.colegioId]
+    );
+    res.json(rows);
+});
+
+module.exports = {
+    superintendencia,
+    superintendenciaCsv,
+    listarMetasPme,
+    crearMetaPme,
+    eliminarMetaPme,
+    listarAuditoria,
+};
