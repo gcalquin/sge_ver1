@@ -5,8 +5,10 @@ const { z } = require("zod");
 z.setErrorMap((issue, ctx) => {
     switch (issue.code) {
         case z.ZodIssueCode.invalid_type:
-            if (issue.received === "undefined" || issue.received === "null") return { message: "Este campo es obligatorio." };
-            if (issue.received === "nan" && issue.expected === "number") return { message: "Debe ser un número válido (o este campo es obligatorio)." };
+            if (issue.received === "undefined" || issue.received === "null")
+                return { message: "Este campo es obligatorio." };
+            if (issue.received === "nan" && issue.expected === "number")
+                return { message: "Debe ser un número válido (o este campo es obligatorio)." };
             return { message: `Tipo de dato inválido (se esperaba ${issue.expected}).` };
         case z.ZodIssueCode.too_small:
             if (issue.type === "string") return { message: `Debe tener al menos ${issue.minimum} caracter(es).` };

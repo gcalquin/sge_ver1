@@ -20,7 +20,12 @@ router.post(
     auditar("reportes.metaPme.crear"),
     controller.crearMetaPme
 );
-router.delete("/metas-pme/:id", requireRol("admin", "superadmin"), auditar("reportes.metaPme.eliminar"), controller.eliminarMetaPme);
+router.delete(
+    "/metas-pme/:id",
+    requireRol("admin", "superadmin"),
+    auditar("reportes.metaPme.eliminar"),
+    controller.eliminarMetaPme
+);
 
 router.get("/auditoria", requireRol("admin", "superadmin"), controller.listarAuditoria);
 

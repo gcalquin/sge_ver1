@@ -1,4 +1,4 @@
-const CACHE_NAME = "sge-shell-v10";
+const CACHE_NAME = "sge-shell-c271b2a79ec5";
 const APP_SHELL = [
     "/index.html",
     "/manifest.json",

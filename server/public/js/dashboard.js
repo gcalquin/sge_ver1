@@ -24,7 +24,7 @@ const Dashboard = (() => {
                   .map(
                       (v) =>
                           `<div class="flex justify-between items-center bg-amber-50 px-2 py-1 rounded">
-                              <span>${v.folio} (${v.estudiante}) — ${v.descripcion}</span>
+                              <span>${App.escapeHtml(v.folio)} (${App.escapeHtml(v.estudiante)}) — ${App.escapeHtml(v.descripcion)}</span>
                               <button onclick="Casos.verDetalleCaso(${v.casoId})" class="text-blue-700 underline ms-2 shrink-0">Ver</button>
                           </div>`
                   )
@@ -38,8 +38,8 @@ const Dashboard = (() => {
                       const cumple = m.valorActual !== null && Number(m.valorActual) >= Number(m.metaValor);
                       const valorTexto = m.valorActual === null ? "sin datos" : m.valorActual;
                       return `<div class="border-b border-slate-100 pb-1">
-                          <div class="flex justify-between"><b>${m.indicador}</b><span class="${cumple ? "text-green-600" : "text-red-600"} font-bold">${valorTexto} / meta ${m.metaValor}</span></div>
-                          ${m.descripcion ? `<div class="text-slate-400">${m.descripcion}</div>` : ""}
+                          <div class="flex justify-between"><b>${App.escapeHtml(m.indicador)}</b><span class="${cumple ? "text-green-600" : "text-red-600"} font-bold">${App.escapeHtml(valorTexto)} / meta ${m.metaValor}</span></div>
+                          ${m.descripcion ? `<div class="text-slate-400">${App.escapeHtml(m.descripcion)}</div>` : ""}
                       </div>`;
                   })
                   .join("")
@@ -55,7 +55,7 @@ const Dashboard = (() => {
                 contenedorAlertas.innerHTML += `
                     <div class="alert alert-danger p-2 mb-1 rounded flex justify-between items-center text-xs border-s-4 border-red-600 bg-red-50">
                         <div>
-                            <span class="font-bold text-red-900">🚨 ALERTA: ${a.folio} (${a.estudiante})</span>
+                            <span class="font-bold text-red-900">🚨 ALERTA: ${App.escapeHtml(a.folio)} (${App.escapeHtml(a.estudiante)})</span>
                             <p class="text-xs text-slate-600 m-0">Lleva ${a.diasInactivo} días sin bitácora actualizada.</p>
                         </div>
                         <button onclick="Casos.verDetalleCaso(${a.id})" class="text-xs text-blue-800 underline font-semibold">Revisar Caso</button>
@@ -72,7 +72,7 @@ const Dashboard = (() => {
                   .map((u) => {
                       const sobrecargado = u.casosActivos >= 8;
                       return `<div class="flex justify-between items-center px-1 py-1 ${sobrecargado ? "bg-red-50 rounded" : ""}">
-                          <span>${u.nombre}</span>
+                          <span>${App.escapeHtml(u.nombre)}</span>
                           <span class="font-bold ${sobrecargado ? "text-red-700" : "text-slate-700"}">${u.casosActivos} caso(s) activo(s)</span>
                       </div>`;
                   })
@@ -85,8 +85,8 @@ const Dashboard = (() => {
                   .map(
                       (r) => `<div class="bg-red-50 px-2 py-1 rounded flex justify-between items-center">
                           <div>
-                              <b>${r.estudiante}</b> — ${r.folio} (${r.categoriaNueva})
-                              <div class="text-slate-400">Caso previo ${r.folioAnterior} (${r.categoriaAnterior}) cerrado el ${r.fechaCierreAnterior}</div>
+                              <b>${App.escapeHtml(r.estudiante)}</b> — ${App.escapeHtml(r.folio)} (${App.escapeHtml(r.categoriaNueva)})
+                              <div class="text-slate-400">Caso previo ${App.escapeHtml(r.folioAnterior)} (${App.escapeHtml(r.categoriaAnterior)}) cerrado el ${App.escapeHtml(r.fechaCierreAnterior)}</div>
                           </div>
                           <button onclick="Casos.verDetalleCaso(${r.id})" class="text-blue-700 underline ms-2 shrink-0">Ver</button>
                       </div>`
@@ -99,8 +99,8 @@ const Dashboard = (() => {
             ? data.capacitacionesPorVencer
                   .map(
                       (c) => `<div class="flex justify-between bg-amber-50 px-2 py-1 rounded">
-                          <span>${c.usuario} — ${c.nombre}</span>
-                          <span class="text-slate-500 shrink-0 ms-2">Vence ${c.fechaVencimiento}</span>
+                          <span>${App.escapeHtml(c.usuario)} — ${App.escapeHtml(c.nombre)}</span>
+                          <span class="text-slate-500 shrink-0 ms-2">Vence ${App.escapeHtml(c.fechaVencimiento)}</span>
                       </div>`
                   )
                   .join("")
@@ -142,7 +142,10 @@ const Dashboard = (() => {
 
     async function enviarResumenAlertas() {
         try {
-            const resultado = await Api.apiFetch("/notificaciones/alertas", { method: "POST", body: JSON.stringify({}) });
+            const resultado = await Api.apiFetch("/notificaciones/alertas", {
+                method: "POST",
+                body: JSON.stringify({}),
+            });
             const detalle = resultado.dryRun ? " (modo dry-run: solo se registró en el log del servidor)" : "";
             App.mostrarToast(`Resumen enviado: ${resultado.totalAlertas} alertas${detalle}.`, "success");
         } catch (err) {

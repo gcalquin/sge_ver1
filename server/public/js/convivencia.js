@@ -41,10 +41,10 @@ const Convivencia = (() => {
                       (a) => `<div class="border border-slate-100 rounded-lg p-2">
                           <div class="flex justify-between items-start">
                               <div>
-                                  <b>${a.nombre}</b> <span class="badge ${COLOR_TIPO_ACTIVIDAD[a.tipo] || COLOR_TIPO_ACTIVIDAD.Otro} status-badge text-xs">${a.tipo}</span>
+                                  <b>${App.escapeHtml(a.nombre)}</b> <span class="badge ${COLOR_TIPO_ACTIVIDAD[a.tipo] || COLOR_TIPO_ACTIVIDAD.Otro} status-badge text-xs">${App.escapeHtml(a.tipo)}</span>
                                   ${a.cerrada ? '<span class="badge bg-slate-200 text-slate-700 status-badge text-xs ms-1">Cerrada</span>' : ""}
-                                  <div class="text-slate-400">${a.fecha} — registrado por ${a.creadoPor}</div>
-                                  ${a.descripcion ? `<div class="text-slate-500 italic">${a.descripcion}</div>` : ""}
+                                  <div class="text-slate-400">${App.escapeHtml(a.fecha)} — registrado por ${App.escapeHtml(a.creadoPor)}</div>
+                                  ${a.descripcion ? `<div class="text-slate-500 italic">${App.escapeHtml(a.descripcion)}</div>` : ""}
                               </div>
                               <div class="text-right shrink-0 ms-2 flex flex-col items-end gap-1">
                                   <button onclick="Convivencia.toggleDetalleActividad(${a.id})" class="text-blue-700 hover:underline block text-xs">
@@ -131,7 +131,7 @@ const Convivencia = (() => {
                             ? bitacora
                                   .map(
                                       (b) =>
-                                          `<div class="border-b border-slate-50 pb-1"><b>${b.fecha}</b> — ${b.operador}<div class="text-slate-500">${b.contenido}</div></div>`
+                                          `<div class="border-b border-slate-50 pb-1"><b>${App.escapeHtml(b.fecha)}</b> — ${App.escapeHtml(b.operador)}<div class="text-slate-500">${App.escapeHtml(b.contenido)}</div></div>`
                                   )
                                   .join("")
                             : '<p class="text-slate-400 italic">Sin entradas de seguimiento registradas.</p>'
@@ -155,7 +155,7 @@ const Convivencia = (() => {
                             ? adjuntos
                                   .map(
                                       (a) =>
-                                          `<a href="${Api.API_BASE}/convivencia/actividades/${id}/adjuntos/${a.id}" target="_blank" class="d-block text-blue-700"><i class="fa-solid fa-paperclip me-1"></i>${a.nombre}</a>`
+                                          `<a href="${Api.API_BASE}/convivencia/actividades/${id}/adjuntos/${a.id}" target="_blank" class="d-block text-blue-700"><i class="fa-solid fa-paperclip me-1"></i>${App.escapeHtml(a.nombre)}</a>`
                                   )
                                   .join("")
                             : '<p class="text-slate-400 italic">Sin archivos adjuntos.</p>'
@@ -182,7 +182,7 @@ const Convivencia = (() => {
             </div>
             ${
                 actividad.cerrada
-                    ? `<div class="bg-slate-50 rounded p-2"><b>Cerrada el ${actividad.fechaCierre}.</b> ${actividad.evaluacionCierre || ""}</div>`
+                    ? `<div class="bg-slate-50 rounded p-2"><b>Cerrada el ${App.escapeHtml(actividad.fechaCierre)}.</b> ${App.escapeHtml(actividad.evaluacionCierre)}</div>`
                     : ""
             }
         `;
@@ -193,7 +193,10 @@ const Convivencia = (() => {
         const inputs = e.target.querySelectorAll("input");
         const payload = { fecha: inputs[0].value, contenido: inputs[1].value.trim() };
         try {
-            await Api.apiFetch(`/convivencia/actividades/${id}/bitacora`, { method: "POST", body: JSON.stringify(payload) });
+            await Api.apiFetch(`/convivencia/actividades/${id}/bitacora`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
             const actividad = actividadesCache.find((a) => a.id === id);
             if (actividad) actividad.bitacora = Number(actividad.bitacora) + 1;
             await renderDetalleActividad(id);
@@ -235,7 +238,10 @@ const Convivencia = (() => {
             evaluacion: document.getElementById("cierre-act-evaluacion").value.trim(),
         };
         try {
-            await Api.apiFetch(`/convivencia/actividades/${id}/cierre`, { method: "POST", body: JSON.stringify(payload) });
+            await Api.apiFetch(`/convivencia/actividades/${id}/cierre`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
             bootstrap.Modal.getInstance(document.getElementById("modalCerrarActividad")).hide();
             await renderActividades();
             App.mostrarToast("Actividad cerrada.", "success");
@@ -253,7 +259,7 @@ const Convivencia = (() => {
             ? medidas
                   .map(
                       (m) => `<div class="flex justify-between items-center bg-slate-50 px-2 py-1 rounded">
-                          <span class="${m.activo ? "" : "text-slate-400 line-through"}">${m.nombre}</span>
+                          <span class="${m.activo ? "" : "text-slate-400 line-through"}">${App.escapeHtml(m.nombre)}</span>
                           <span class="space-x-2 shrink-0">
                               <button onclick="Convivencia.toggleMedida(${m.id}, ${!m.activo})" class="text-blue-700 hover:underline">${m.activo ? "Desactivar" : "Activar"}</button>
                               <button onclick="Convivencia.eliminarMedida(${m.id})" class="text-red-600 hover:underline">Eliminar</button>
@@ -279,7 +285,10 @@ const Convivencia = (() => {
 
     async function toggleMedida(id, activo) {
         try {
-            await Api.apiFetch(`/convivencia/medidas-catalogo/${id}`, { method: "PATCH", body: JSON.stringify({ activo }) });
+            await Api.apiFetch(`/convivencia/medidas-catalogo/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ activo }),
+            });
             await renderMedidas();
         } catch (err) {
             App.mostrarToast(err.message, "danger");
@@ -298,7 +307,9 @@ const Convivencia = (() => {
     async function cargarOpcionesMedida(selectEl) {
         const medidas = await Api.apiFetch("/convivencia/medidas-catalogo");
         const activas = medidas.filter((m) => m.activo);
-        selectEl.innerHTML = activas.map((m) => `<option value="${m.nombre}">${m.nombre}</option>`).join("");
+        selectEl.innerHTML = activas
+            .map((m) => `<option value="${App.escapeHtml(m.nombre)}">${App.escapeHtml(m.nombre)}</option>`)
+            .join("");
     }
 
     // ===================== protocolos personalizados =====================
@@ -314,10 +325,10 @@ const Convivencia = (() => {
                 (p) => `<div class="border-b border-slate-100 py-2">
                     <div class="flex justify-between items-start">
                         <div>
-                            <b>${p.categoria}</b>
+                            <b>${App.escapeHtml(p.categoria)}</b>
                             ${p.personalizado ? '<span class="badge bg-blue-100 text-blue-800 status-badge text-xs ms-1">Personalizado</span>' : '<span class="badge bg-secondary status-badge text-xs ms-1">Global</span>'}
-                            <div class="text-slate-500">${p.nombre}</div>
-                            <div class="text-slate-400 text-xs">${p.normativa || ""}</div>
+                            <div class="text-slate-500">${App.escapeHtml(p.nombre)}</div>
+                            <div class="text-slate-400 text-xs">${App.escapeHtml(p.normativa)}</div>
                         </div>
                         ${
                             gestion

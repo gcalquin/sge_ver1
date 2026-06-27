@@ -18,7 +18,7 @@ const Colegios = (() => {
     function llenarSelectSostenedor(select) {
         select.innerHTML = '<option value="">Sin sostenedor asignado</option>';
         sostenedoresCache.forEach((s) => {
-            select.innerHTML += `<option value="${s.id}">${s.nombre}</option>`;
+            select.innerHTML += `<option value="${s.id}">${App.escapeHtml(s.nombre)}</option>`;
         });
     }
 
@@ -32,7 +32,7 @@ const Colegios = (() => {
                   .map(
                       (s) =>
                           `<div class="flex justify-between items-center bg-slate-50 px-2 py-1 rounded">
-                              <span>${s.nombre} <span class="text-slate-400">(${s.total_colegios} colegio/s)</span></span>
+                              <span>${App.escapeHtml(s.nombre)} <span class="text-slate-400">(${s.total_colegios} colegio/s)</span></span>
                               <span class="space-x-2">
                                   <button onclick="Colegios.abrirEditarSostenedor(${s.id})" class="text-blue-700 hover:underline">Editar</button>
                                   <button onclick="Colegios.eliminarSostenedor(${s.id})" class="text-red-600 hover:underline">Eliminar</button>
@@ -72,7 +72,10 @@ const Colegios = (() => {
         const nombre = document.getElementById("edsost-nombre").value.trim();
         const rut = document.getElementById("edsost-rut").value.trim();
         try {
-            await Api.apiFetch(`/sostenedores/${id}`, { method: "PATCH", body: JSON.stringify({ nombre, rut: rut || null }) });
+            await Api.apiFetch(`/sostenedores/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ nombre, rut: rut || null }),
+            });
             bootstrap.Modal.getInstance(document.getElementById("modalEditarSostenedor")).hide();
             await cargarSostenedores();
             App.mostrarToast("Sostenedor actualizado.", "success");
@@ -102,10 +105,10 @@ const Colegios = (() => {
                 : '<span class="badge bg-secondary status-badge text-xs">Inactivo</span>';
             tbody.innerHTML += `
                 <tr>
-                    <td class="font-bold text-slate-700">${c.nombre}</td>
-                    <td class="text-xs font-mono text-slate-600">${c.rbd || "-"}</td>
-                    <td class="text-xs text-slate-600">${c.sostenedor_nombre || "-"}</td>
-                    <td class="text-xs text-slate-600">${c.comuna || "-"}</td>
+                    <td class="font-bold text-slate-700">${App.escapeHtml(c.nombre)}</td>
+                    <td class="text-xs font-mono text-slate-600">${App.escapeHtml(c.rbd) || "-"}</td>
+                    <td class="text-xs text-slate-600">${App.escapeHtml(c.sostenedor_nombre) || "-"}</td>
+                    <td class="text-xs text-slate-600">${App.escapeHtml(c.comuna) || "-"}</td>
                     <td>${badge}</td>
                     <td class="text-xs">${c.total_usuarios}</td>
                     <td class="text-xs">${c.total_casos}</td>
@@ -136,7 +139,13 @@ const Colegios = (() => {
         try {
             await Api.apiFetch("/colegios", {
                 method: "POST",
-                body: JSON.stringify({ nombre, rbd: rbd || null, sostenedorId: sostenedorId || null, comuna, direccion }),
+                body: JSON.stringify({
+                    nombre,
+                    rbd: rbd || null,
+                    sostenedorId: sostenedorId || null,
+                    comuna,
+                    direccion,
+                }),
             });
             document.getElementById("form-colegio").reset();
             await cargarAmbitos();

@@ -128,12 +128,14 @@ const pdfActividad = asyncHandler(async (req, res) => {
     const doc = new PDFDocument({ margin: 50 });
     doc.pipe(res);
 
-    doc.fontSize(14).fillColor("#1e3a8a").text(colegioRows[0]?.nombre || "Establecimiento Educacional", { align: "center" });
-    if (colegioRows[0]?.rbd) doc.fontSize(9).fillColor("#64748b").text(`RBD: ${colegioRows[0].rbd}`, { align: "center" });
+    doc.fontSize(14)
+        .fillColor("#1e3a8a")
+        .text(colegioRows[0]?.nombre || "Establecimiento Educacional", { align: "center" });
+    if (colegioRows[0]?.rbd)
+        doc.fontSize(9).fillColor("#64748b").text(`RBD: ${colegioRows[0].rbd}`, { align: "center" });
     doc.moveDown(0.8);
     doc.fillColor("#000000");
-    doc
-        .moveTo(50, doc.y)
+    doc.moveTo(50, doc.y)
         .lineTo(doc.page.width - 50, doc.y)
         .strokeColor("#cbd5e1")
         .stroke();
@@ -180,9 +182,9 @@ const pdfActividad = asyncHandler(async (req, res) => {
     }
 
     doc.moveDown(1.5);
-    doc.fontSize(8).fillColor("#94a3b8").text(
-        "Documento generado automáticamente por el Sistema de Gestión de Casos Estudiantiles (SGE)."
-    );
+    doc.fontSize(8)
+        .fillColor("#94a3b8")
+        .text("Documento generado automáticamente por el Sistema de Gestión de Casos Estudiantiles (SGE).");
 
     doc.end();
 });

@@ -77,7 +77,9 @@ const actualizar = asyncHandler(async (req, res) => {
     if (!existente[0]) return res.status(404).json({ error: "Usuario no encontrado." });
 
     if (await bloqueaUltimoAdmin(req.colegioId, req.params.id, rolPermiso)) {
-        return res.status(409).json({ error: "No se puede quitar el rol de administrador al último administrador del colegio." });
+        return res
+            .status(409)
+            .json({ error: "No se puede quitar el rol de administrador al último administrador del colegio." });
     }
 
     let username = existente[0].username;
@@ -96,7 +98,17 @@ const actualizar = asyncHandler(async (req, res) => {
                 username = $6, password_hash = $7
           WHERE id = $8 AND colegio_id = $9
         RETURNING id, username, nombre, rol_institucional AS "rolInstitucional", rol AS "rolPermiso", especialidad, email`,
-        [nombre.trim(), rol.trim(), rolPermiso, especialidad || null, email || null, username, passwordHash, req.params.id, req.colegioId]
+        [
+            nombre.trim(),
+            rol.trim(),
+            rolPermiso,
+            especialidad || null,
+            email || null,
+            username,
+            passwordHash,
+            req.params.id,
+            req.colegioId,
+        ]
     );
 
     res.json(rows[0]);
@@ -107,10 +119,10 @@ const eliminar = asyncHandler(async (req, res) => {
         return res.status(400).json({ error: "No puedes eliminar tu propia cuenta." });
     }
 
-    const { rows: objetivo } = await pool.query("SELECT id, nombre, rol FROM usuarios WHERE id = $1 AND colegio_id = $2", [
-        req.params.id,
-        req.colegioId,
-    ]);
+    const { rows: objetivo } = await pool.query(
+        "SELECT id, nombre, rol FROM usuarios WHERE id = $1 AND colegio_id = $2",
+        [req.params.id, req.colegioId]
+    );
     if (!objetivo[0]) return res.status(404).json({ error: "Usuario no encontrado." });
 
     if (objetivo[0].rol === "admin") {

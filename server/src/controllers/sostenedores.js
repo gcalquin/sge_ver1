@@ -30,7 +30,9 @@ const actualizar = asyncHandler(async (req, res) => {
 });
 
 const eliminar = asyncHandler(async (req, res) => {
-    const { rows: colegios } = await pool.query("SELECT count(*) FROM colegios WHERE sostenedor_id = $1", [req.params.id]);
+    const { rows: colegios } = await pool.query("SELECT count(*) FROM colegios WHERE sostenedor_id = $1", [
+        req.params.id,
+    ]);
     if (Number(colegios[0].count) > 0) {
         return res.status(409).json({ error: "No se puede eliminar: hay colegios asociados a este sostenedor." });
     }

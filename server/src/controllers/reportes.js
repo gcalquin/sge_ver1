@@ -41,7 +41,14 @@ async function calcularReporte(colegioId) {
         ? Math.round((bitacoraCount.reduce((acc, c) => acc + c.entradas, 0) / bitacoraCount.length) * 10) / 10
         : 0;
 
-    return { casos, totalCasos: casos.length, porCategoria, porEstado, tiempoPromedioResolucionDias, promedioEntradasBitacoraPorCaso };
+    return {
+        casos,
+        totalCasos: casos.length,
+        porCategoria,
+        porEstado,
+        tiempoPromedioResolucionDias,
+        promedioEntradasBitacoraPorCaso,
+    };
 }
 
 const superintendencia = asyncHandler(async (req, res) => {

@@ -17,7 +17,15 @@ const subir = asyncHandler(async (req, res) => {
         `INSERT INTO adjuntos (caso_id, bitacora_id, nombre_orig, nombre_disco, mime, tamano, subido_por)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id, nombre_orig AS nombre, mime, tamano`,
-        [req.params.id, req.params.bitId, req.file.originalname, req.file.filename, req.file.mimetype, req.file.size, req.usuario.id]
+        [
+            req.params.id,
+            req.params.bitId,
+            req.file.originalname,
+            req.file.filename,
+            req.file.mimetype,
+            req.file.size,
+            req.usuario.id,
+        ]
     );
 
     res.status(201).json(rows[0]);

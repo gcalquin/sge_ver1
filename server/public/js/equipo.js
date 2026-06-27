@@ -13,13 +13,16 @@ const Equipo = (() => {
         if (filterResp) filterResp.innerHTML = `<option value="Todos">Todos los responsables</option>`;
 
         // Sólo admin/funcionario pueden ser responsables de un caso (invitado es solo lectura).
-        const asignables = App.estado.equipoCache.filter((m) => m.rolPermiso === "admin" || m.rolPermiso === "funcionario");
+        const asignables = App.estado.equipoCache.filter(
+            (m) => m.rolPermiso === "admin" || m.rolPermiso === "funcionario"
+        );
 
         asignables.forEach((m) => {
             selectoresDinamicos.forEach((select) => {
-                select.innerHTML += `<option value="${m.id}">${m.nombre} (${m.rolInstitucional})</option>`;
+                select.innerHTML += `<option value="${m.id}">${App.escapeHtml(m.nombre)} (${App.escapeHtml(m.rolInstitucional)})</option>`;
             });
-            if (filterResp) filterResp.innerHTML += `<option value="${m.nombre}">${m.nombre}</option>`;
+            if (filterResp)
+                filterResp.innerHTML += `<option value="${App.escapeHtml(m.nombre)}">${App.escapeHtml(m.nombre)}</option>`;
         });
     }
 
@@ -29,7 +32,7 @@ const Equipo = (() => {
         const puedeGestionar = App.estado.currentUser.rol === "admin" || App.estado.currentUser.rol === "superadmin";
         App.estado.equipoCache.forEach((m) => {
             const esUnoMismo = m.id === App.estado.currentUser.id;
-            const btnCapacitaciones = `<button onclick="Capacitaciones.abrirModal(${m.id}, '${m.nombre.replace(/'/g, "\\'")}')" class="text-purple-700 text-xs font-bold hover:underline me-2">Capacitaciones</button>`;
+            const btnCapacitaciones = `<button onclick="Capacitaciones.abrirModal(${m.id}, '${App.escapeHtml(m.nombre.replace(/'/g, "\\'"))}')" class="text-purple-700 text-xs font-bold hover:underline me-2">Capacitaciones</button>`;
             const acciones = puedeGestionar
                 ? btnCapacitaciones +
                   `<button onclick="Equipo.abrirEditarMiembro(${m.id})" class="text-blue-700 text-xs font-bold hover:underline me-2">Editar</button>` +
@@ -38,16 +41,14 @@ const Equipo = (() => {
                       : `<button onclick="Equipo.eliminarMiembroEquipo(${m.id})" class="text-red-600 text-xs font-bold hover:underline">Remover</button>`)
                 : btnCapacitaciones + `<span class="text-slate-300 text-xs italic">Protegido</span>`;
             const badgePermiso =
-                m.rolPermiso === "admin"
-                    ? "bg-primary"
-                    : m.rolPermiso === "invitado"
-                      ? "bg-secondary"
-                      : "bg-success";
-            const especialidad = m.especialidad ? `<br><span class="text-xs text-purple-600">${m.especialidad}</span>` : "";
+                m.rolPermiso === "admin" ? "bg-primary" : m.rolPermiso === "invitado" ? "bg-secondary" : "bg-success";
+            const especialidad = m.especialidad
+                ? `<br><span class="text-xs text-purple-600">${App.escapeHtml(m.especialidad)}</span>`
+                : "";
             tbody.innerHTML += `<tr>
-                <td class="font-bold text-slate-700">${m.nombre}</td>
-                <td class="text-xs font-mono text-slate-500">${m.username}</td>
-                <td class="text-slate-600 text-xs">${m.rolInstitucional}${especialidad}</td>
+                <td class="font-bold text-slate-700">${App.escapeHtml(m.nombre)}</td>
+                <td class="text-xs font-mono text-slate-500">${App.escapeHtml(m.username)}</td>
+                <td class="text-slate-600 text-xs">${App.escapeHtml(m.rolInstitucional)}${especialidad}</td>
                 <td><span class="badge ${badgePermiso} status-badge text-xs">${ETIQUETAS_PERMISO[m.rolPermiso] || m.rolPermiso}</span></td>
                 <td class="text-end">${acciones}</td>
             </tr>`;
@@ -148,7 +149,7 @@ const Equipo = (() => {
     function abrirModalReasignacion(usuarioId, casosAsignados) {
         document.getElementById("reas-usuario-id").value = usuarioId;
         document.getElementById("reas-lista-casos").innerHTML = casosAsignados
-            .map((c) => `<div><i class="fa-solid fa-folder text-amber-500 me-1"></i>${c.folio}</div>`)
+            .map((c) => `<div><i class="fa-solid fa-folder text-amber-500 me-1"></i>${App.escapeHtml(c.folio)}</div>`)
             .join("");
 
         const select = document.getElementById("reas-nuevo-responsable");
@@ -156,7 +157,7 @@ const Equipo = (() => {
         App.estado.equipoCache
             .filter((m) => m.id !== Number(usuarioId) && (m.rolPermiso === "admin" || m.rolPermiso === "funcionario"))
             .forEach((m) => {
-                select.innerHTML += `<option value="${m.id}">${m.nombre} (${m.rolInstitucional})</option>`;
+                select.innerHTML += `<option value="${m.id}">${App.escapeHtml(m.nombre)} (${App.escapeHtml(m.rolInstitucional)})</option>`;
             });
 
         new bootstrap.Modal(document.getElementById("modalReasignarCaso")).show();
@@ -191,7 +192,7 @@ const Equipo = (() => {
                   .map(
                       (c) =>
                           `<div class="flex justify-between items-center bg-slate-50 px-2 py-1 rounded">
-                              <span><b>${c.curso}</b> — ${c.profesorJefeNombre}</span>
+                              <span><b>${App.escapeHtml(c.curso)}</b> — ${App.escapeHtml(c.profesorJefeNombre)}</span>
                               <button onclick="Equipo.eliminarProfesorJefe(${c.id})" class="text-red-600 hover:underline">Quitar</button>
                           </div>`
                   )
@@ -204,7 +205,10 @@ const Equipo = (() => {
         const curso = document.getElementById("pj-curso").value.trim();
         const profesorJefeId = document.getElementById("pj-profesor").value;
         try {
-            await Api.apiFetch("/cursos-profesor-jefe", { method: "POST", body: JSON.stringify({ curso, profesorJefeId }) });
+            await Api.apiFetch("/cursos-profesor-jefe", {
+                method: "POST",
+                body: JSON.stringify({ curso, profesorJefeId }),
+            });
             document.getElementById("form-profesor-jefe").reset();
             await renderProfesoresJefe();
             App.mostrarToast("Profesor jefe asignado.", "success");

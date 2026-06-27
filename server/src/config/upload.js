@@ -16,6 +16,34 @@ const storage = multer.diskStorage({
 
 const maxUploadBytes = (Number(process.env.MAX_UPLOAD_MB) || 10) * 1024 * 1024;
 
-const upload = multer({ storage, limits: { fileSize: maxUploadBytes } });
+// Medios de verificación esperados: documentos escaneados/firmados, fotos e
+// informes. Se restringe el tipo de archivo para evitar que se almacenen
+// ejecutables u otros formatos no relacionados con el expediente.
+const MIME_PERMITIDOS = [
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/gif",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+];
+
+const upload = multer({
+    storage,
+    limits: { fileSize: maxUploadBytes },
+    fileFilter: (req, file, cb) => {
+        if (!MIME_PERMITIDOS.includes(file.mimetype)) {
+            const err = new Error(
+                "Formato de archivo no permitido. Usa PDF, Word, Excel o una imagen (PNG/JPG/WEBP/GIF)."
+            );
+            err.status = 400;
+            return cb(err);
+        }
+        cb(null, true);
+    },
+});
 
 module.exports = { upload, uploadDir };

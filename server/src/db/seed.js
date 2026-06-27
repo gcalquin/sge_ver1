@@ -34,7 +34,11 @@ async function upsertSuperAdmin(client, { username, nombre, clave }) {
     );
 }
 
-async function upsertUsuarioColegio(client, colegioId, { username, nombre, rolInstitucional, clave, rol, especialidad, email }) {
+async function upsertUsuarioColegio(
+    client,
+    colegioId,
+    { username, nombre, rolInstitucional, clave, rol, especialidad, email }
+) {
     const hash = await bcrypt.hash(clave, 10);
     const { rows } = await client.query(
         `INSERT INTO usuarios (colegio_id, username, nombre, rol_institucional, password_hash, rol, especialidad, email)
@@ -62,10 +66,10 @@ async function upsertCursoProfesorJefe(client, colegioId, curso, profesorJefeId)
 }
 
 async function upsertMetaPme(client, colegioId, { indicador, metaValor, descripcion }) {
-    const { rows: existentes } = await client.query("SELECT id FROM metas_pme WHERE colegio_id = $1 AND indicador = $2", [
-        colegioId,
-        indicador,
-    ]);
+    const { rows: existentes } = await client.query(
+        "SELECT id FROM metas_pme WHERE colegio_id = $1 AND indicador = $2",
+        [colegioId, indicador]
+    );
     if (existentes.length > 0) return;
     await client.query(
         `INSERT INTO metas_pme (colegio_id, indicador, meta_valor, descripcion) VALUES ($1, $2, $3, $4)`,
@@ -73,7 +77,11 @@ async function upsertMetaPme(client, colegioId, { indicador, metaValor, descripc
     );
 }
 
-async function sembrarDerivacion(client, casoId, { institucion, tipo, fechaDerivacion, estado, notas, registradoPorId }) {
+async function sembrarDerivacion(
+    client,
+    casoId,
+    { institucion, tipo, fechaDerivacion, estado, notas, registradoPorId }
+) {
     const { rows: existentes } = await client.query("SELECT id FROM derivaciones WHERE caso_id = $1 AND tipo = $2", [
         casoId,
         tipo,
@@ -90,7 +98,9 @@ async function sembrarPasosProtocolo(client, casoId, categoria, fechaApertura) {
     const { rows: existentes } = await client.query("SELECT 1 FROM caso_pasos_protocolo WHERE caso_id = $1", [casoId]);
     if (existentes.length > 0) return;
 
-    const { rows: protocoloRows } = await client.query("SELECT pasos FROM protocolos WHERE categoria = $1", [categoria]);
+    const { rows: protocoloRows } = await client.query("SELECT pasos FROM protocolos WHERE categoria = $1", [
+        categoria,
+    ]);
     const pasos = protocoloRows[0]?.pasos || [];
     for (const paso of pasos) {
         const fechaLimite = new Date(`${fechaApertura}T00:00:00`);
@@ -103,7 +113,23 @@ async function sembrarPasosProtocolo(client, casoId, categoria, fechaApertura) {
     }
 }
 
-async function sembrarCaso(client, { colegioId, estudiante, categoria, descripcion, estado, fechaApertura, responsableId, curso, tieneNee, diagnosticoPie, beneficiosJunaeb, bitacora }) {
+async function sembrarCaso(
+    client,
+    {
+        colegioId,
+        estudiante,
+        categoria,
+        descripcion,
+        estado,
+        fechaApertura,
+        responsableId,
+        curso,
+        tieneNee,
+        diagnosticoPie,
+        beneficiosJunaeb,
+        bitacora,
+    }
+) {
     const { rows: existentes } = await client.query("SELECT id FROM casos WHERE colegio_id = $1 AND estudiante = $2", [
         colegioId,
         estudiante,
@@ -122,7 +148,19 @@ async function sembrarCaso(client, { colegioId, estudiante, categoria, descripci
                              curso, tiene_nee, diagnostico_pie, beneficios_junaeb)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING id`,
-        [colegioId, estudiante, categoria, descripcion, estado, fechaApertura, responsableId, curso || null, Boolean(tieneNee), diagnosticoPie || null, beneficiosJunaeb || null]
+        [
+            colegioId,
+            estudiante,
+            categoria,
+            descripcion,
+            estado,
+            fechaApertura,
+            responsableId,
+            curso || null,
+            Boolean(tieneNee),
+            diagnosticoPie || null,
+            beneficiosJunaeb || null,
+        ]
     );
     const casoId = caso[0].id;
 
@@ -140,7 +178,7 @@ async function sembrarCaso(client, { colegioId, estudiante, categoria, descripci
 }
 
 async function sembrarCasosGabrielaMistral(client, colegioId, { anaId, carlosId, mariaId }) {
-    const joaquinId = await sembrarCaso(client, {
+    await sembrarCaso(client, {
         colegioId,
         estudiante: "Joaquín Maino Palma",
         categoria: "Convivencia Escolar",
@@ -166,7 +204,8 @@ async function sembrarCasosGabrielaMistral(client, colegioId, { anaId, carlosId,
         colegioId,
         estudiante: "Francisca Silva Fuentes",
         categoria: "Académico / Rendimiento",
-        descripcion: "Baja abrupta de calificaciones en el último trimestre escolar. Se evidencia desmotivación severa.",
+        descripcion:
+            "Baja abrupta de calificaciones en el último trimestre escolar. Se evidencia desmotivación severa.",
         estado: "Abierto",
         fechaApertura: "2026-06-01",
         responsableId: carlosId,
@@ -185,7 +224,8 @@ async function sembrarCasosGabrielaMistral(client, colegioId, { anaId, carlosId,
         colegioId,
         estudiante: "Cristóbal Vega Henríquez",
         categoria: "Asistencia / Deserción",
-        descripcion: "Inasistencias reiteradas durante el mes, sin justificativo formal de apoderado. Riesgo de desvinculación.",
+        descripcion:
+            "Inasistencias reiteradas durante el mes, sin justificativo formal de apoderado. Riesgo de desvinculación.",
         estado: "En seguimiento",
         fechaApertura: "2026-06-14",
         responsableId: anaId,
@@ -194,7 +234,12 @@ async function sembrarCasosGabrielaMistral(client, colegioId, { anaId, carlosId,
         diagnosticoPie:
             "Diagnóstico de Trastorno por Déficit Atencional con Hiperactividad (TDAH), con PACI vigente. Requiere apoyo de aula de recursos 3 horas semanales (información confidencial PIE).",
         bitacora: [
-            { tipo: "Apertura", fecha: "2026-06-14", operadorId: anaId, contenido: "Apertura de expediente por alerta de asistencia." },
+            {
+                tipo: "Apertura",
+                fecha: "2026-06-14",
+                operadorId: anaId,
+                contenido: "Apertura de expediente por alerta de asistencia.",
+            },
             {
                 tipo: "Seguimiento",
                 fecha: "2026-06-16",
@@ -215,7 +260,12 @@ async function sembrarCasosGabrielaMistral(client, colegioId, { anaId, carlosId,
         responsableId: mariaId,
         curso: "7ºA",
         bitacora: [
-            { tipo: "Apertura", fecha: "2026-06-18", operadorId: mariaId, contenido: "Apertura de expediente por derivación de profesor jefe." },
+            {
+                tipo: "Apertura",
+                fecha: "2026-06-18",
+                operadorId: mariaId,
+                contenido: "Apertura de expediente por derivación de profesor jefe.",
+            },
             {
                 tipo: "Entrevista",
                 fecha: "2026-06-20",
@@ -236,7 +286,12 @@ async function sembrarCasosGabrielaMistral(client, colegioId, { anaId, carlosId,
         responsableId: carlosId,
         curso: "8ºB",
         bitacora: [
-            { tipo: "Apertura", fecha: "2026-06-22", operadorId: carlosId, contenido: "Apertura de expediente y activación de protocolo de resguardo." },
+            {
+                tipo: "Apertura",
+                fecha: "2026-06-22",
+                operadorId: carlosId,
+                contenido: "Apertura de expediente y activación de protocolo de resguardo.",
+            },
         ],
     });
 
@@ -257,7 +312,8 @@ async function sembrarCasosGabrielaMistral(client, colegioId, { anaId, carlosId,
     await upsertMetaPme(client, colegioId, {
         indicador: "Tasa de éxito de medidas aplicadas (%)",
         metaValor: 80,
-        descripcion: "Meta PME 2026: mantener sobre 80% de efectividad en las medidas de convivencia escolar aplicadas.",
+        descripcion:
+            "Meta PME 2026: mantener sobre 80% de efectividad en las medidas de convivencia escolar aplicadas.",
     });
     await upsertMetaPme(client, colegioId, {
         indicador: "Casos cerrados (%)",
@@ -271,14 +327,20 @@ async function sembrarCasosSanIgnacio(client, colegioId, { pedroId, luciaId }) {
         colegioId,
         estudiante: "Tomás Bravo Lagos",
         categoria: "Asistencia / Deserción",
-        descripcion: "Inasistencias reiteradas sin justificativo durante el último mes. Riesgo de desvinculación escolar.",
+        descripcion:
+            "Inasistencias reiteradas sin justificativo durante el último mes. Riesgo de desvinculación escolar.",
         estado: "Abierto",
         fechaApertura: "2026-06-10",
         responsableId: pedroId,
         curso: "4ºB",
         beneficiosJunaeb: "Beca BARE, Programa de Alimentación Escolar (PAE)",
         bitacora: [
-            { tipo: "Apertura", fecha: "2026-06-10", operadorId: pedroId, contenido: "Apertura de expediente por alerta de asistencia." },
+            {
+                tipo: "Apertura",
+                fecha: "2026-06-10",
+                operadorId: pedroId,
+                contenido: "Apertura de expediente por alerta de asistencia.",
+            },
         ],
     });
 
@@ -292,12 +354,18 @@ async function sembrarCasosSanIgnacio(client, colegioId, { pedroId, luciaId }) {
         responsableId: luciaId,
         curso: "6ºA",
         bitacora: [
-            { tipo: "Apertura", fecha: "2026-06-05", operadorId: luciaId, contenido: "Apertura de expediente por denuncia de inspectoría." },
+            {
+                tipo: "Apertura",
+                fecha: "2026-06-05",
+                operadorId: luciaId,
+                contenido: "Apertura de expediente por denuncia de inspectoría.",
+            },
             {
                 tipo: "Seguimiento",
                 fecha: "2026-06-08",
                 operadorId: luciaId,
-                contenido: "Se realiza mediación entre las partes involucradas y se acuerdan compromisos de convivencia.",
+                contenido:
+                    "Se realiza mediación entre las partes involucradas y se acuerdan compromisos de convivencia.",
             },
         ],
     });
@@ -312,7 +380,12 @@ async function sembrarCasosSanIgnacio(client, colegioId, { pedroId, luciaId }) {
         responsableId: pedroId,
         curso: "7ºB",
         bitacora: [
-            { tipo: "Apertura", fecha: "2026-06-23", operadorId: pedroId, contenido: "Apertura de expediente por alerta del departamento académico." },
+            {
+                tipo: "Apertura",
+                fecha: "2026-06-23",
+                operadorId: pedroId,
+                contenido: "Apertura de expediente por alerta del departamento académico.",
+            },
         ],
     });
 
@@ -320,13 +393,19 @@ async function sembrarCasosSanIgnacio(client, colegioId, { pedroId, luciaId }) {
         colegioId,
         estudiante: "Ignacio Pizarro Reyes",
         categoria: "Salud Mental / Emocional",
-        descripcion: "Estudiante presenta señales de angustia y bajo ánimo sostenido, reportadas por su profesora jefe.",
+        descripcion:
+            "Estudiante presenta señales de angustia y bajo ánimo sostenido, reportadas por su profesora jefe.",
         estado: "En seguimiento",
         fechaApertura: "2026-06-12",
         responsableId: luciaId,
         curso: "8ºA",
         bitacora: [
-            { tipo: "Apertura", fecha: "2026-06-12", operadorId: luciaId, contenido: "Apertura de expediente por derivación de profesora jefe." },
+            {
+                tipo: "Apertura",
+                fecha: "2026-06-12",
+                operadorId: luciaId,
+                contenido: "Apertura de expediente por derivación de profesora jefe.",
+            },
             {
                 tipo: "Entrevista",
                 fecha: "2026-06-14",
@@ -340,13 +419,19 @@ async function sembrarCasosSanIgnacio(client, colegioId, { pedroId, luciaId }) {
         colegioId,
         estudiante: "Antonia Herrera Campos",
         categoria: "Vulneración de Derechos",
-        descripcion: "Se recibe antecedente de posible vulneración en el entorno familiar, reportado por apoderado de un compañero.",
+        descripcion:
+            "Se recibe antecedente de posible vulneración en el entorno familiar, reportado por apoderado de un compañero.",
         estado: "Abierto",
         fechaApertura: "2026-06-24",
         responsableId: pedroId,
         curso: "6ºA",
         bitacora: [
-            { tipo: "Apertura", fecha: "2026-06-24", operadorId: pedroId, contenido: "Apertura de expediente y activación de protocolo de resguardo." },
+            {
+                tipo: "Apertura",
+                fecha: "2026-06-24",
+                operadorId: pedroId,
+                contenido: "Apertura de expediente y activación de protocolo de resguardo.",
+            },
         ],
     });
 
@@ -367,7 +452,8 @@ async function sembrarCasosSanIgnacio(client, colegioId, { pedroId, luciaId }) {
     await upsertMetaPme(client, colegioId, {
         indicador: "Tasa de éxito de medidas aplicadas (%)",
         metaValor: 75,
-        descripcion: "Meta PME 2026: mantener sobre 75% de efectividad en las medidas de convivencia escolar aplicadas.",
+        descripcion:
+            "Meta PME 2026: mantener sobre 75% de efectividad en las medidas de convivencia escolar aplicadas.",
     });
     await upsertMetaPme(client, colegioId, {
         indicador: "Casos cerrados (%)",
@@ -382,7 +468,11 @@ async function main() {
     try {
         await client.query("BEGIN");
 
-        await upsertSuperAdmin(client, { username: "superadmin", nombre: "Super Administrador Global", clave: "super123" });
+        await upsertSuperAdmin(client, {
+            username: "superadmin",
+            nombre: "Super Administrador Global",
+            clave: "super123",
+        });
 
         const sostenedorId = await upsertSostenedor(client, {
             nombre: "Fundación Educacional Ejemplo",

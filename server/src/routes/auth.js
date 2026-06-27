@@ -19,7 +19,13 @@ const loginLimiter = rateLimit({
 router.post("/login", loginLimiter, validar(loginSchema), auditar("auth.login"), controller.login);
 router.post("/logout", auditar("auth.logout"), controller.logout);
 router.get("/me", requireAuth, controller.me);
-router.patch("/password", requireAuth, validar(cambiarPasswordSchema), auditar("auth.password"), controller.cambiarPassword);
+router.patch(
+    "/password",
+    requireAuth,
+    validar(cambiarPasswordSchema),
+    auditar("auth.password"),
+    controller.cambiarPassword
+);
 router.post(
     "/contexto",
     requireAuth,
@@ -28,6 +34,12 @@ router.post(
     auditar("auth.contexto.entrar"),
     controller.entrarContexto
 );
-router.post("/contexto/salir", requireAuth, requireRol("superadmin"), auditar("auth.contexto.salir"), controller.salirContexto);
+router.post(
+    "/contexto/salir",
+    requireAuth,
+    requireRol("superadmin"),
+    auditar("auth.contexto.salir"),
+    controller.salirContexto
+);
 
 module.exports = router;

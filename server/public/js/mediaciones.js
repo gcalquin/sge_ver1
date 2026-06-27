@@ -11,9 +11,9 @@ const Mediaciones = (() => {
                               : '<span class="text-xs text-slate-400 no-print">Sin acta firmada adjunta</span>';
                       return `
                 <div class="border-b border-slate-100 py-2">
-                    <div class="flex justify-between"><b>Mediación ${m.fechaMediacion}</b><span class="text-slate-400 text-xs">Mediador(a): ${m.mediador}</span></div>
-                    <div class="text-slate-500">Participantes: ${m.participantes}</div>
-                    <div class="text-slate-600 italic">Acuerdo: ${m.acuerdo}</div>
+                    <div class="flex justify-between"><b>Mediación ${App.escapeHtml(m.fechaMediacion)}</b><span class="text-slate-400 text-xs">Mediador(a): ${App.escapeHtml(m.mediador)}</span></div>
+                    <div class="text-slate-500">Participantes: ${App.escapeHtml(m.participantes)}</div>
+                    <div class="text-slate-600 italic">Acuerdo: ${App.escapeHtml(m.acuerdo)}</div>
                     <div class="mt-1 space-y-1">
                         ${(m.compromisos || [])
                             .map(
@@ -21,7 +21,7 @@ const Mediaciones = (() => {
                             <div class="flex items-start gap-2 ps-2">
                                 <input type="checkbox" class="form-check-input mt-0.5" ${c.cumplido ? "checked" : ""} ${puedeEscribir ? "" : "disabled"}
                                     onchange="Mediaciones.toggleCompromiso(${m.id}, ${c.id}, this.checked)">
-                                <span class="${c.cumplido ? "text-slate-400 line-through" : ""}">${c.descripcion}${c.responsable ? ` — ${c.responsable}` : ""}${c.fechaLimite ? ` (plazo: ${c.fechaLimite})` : ""}</span>
+                                <span class="${c.cumplido ? "text-slate-400 line-through" : ""}">${App.escapeHtml(c.descripcion)}${c.responsable ? ` — ${App.escapeHtml(c.responsable)}` : ""}${c.fechaLimite ? ` (plazo: ${App.escapeHtml(c.fechaLimite)})` : ""}</span>
                             </div>`
                             )
                             .join("")}
@@ -59,7 +59,7 @@ const Mediaciones = (() => {
         contenedor.innerHTML = adjuntos
             .map(
                 (a) =>
-                    `<a href="${Api.API_BASE}/casos/${casoId}/adjuntos/${a.id}" target="_blank" class="d-block text-blue-700"><i class="fa-solid fa-paperclip me-1"></i>${a.nombre}</a>`
+                    `<a href="${Api.API_BASE}/casos/${casoId}/adjuntos/${a.id}" target="_blank" class="d-block text-blue-700"><i class="fa-solid fa-paperclip me-1"></i>${App.escapeHtml(a.nombre)}</a>`
             )
             .join("");
         contenedor.classList.remove("hidden");

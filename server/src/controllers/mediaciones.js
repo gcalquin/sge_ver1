@@ -139,24 +139,40 @@ const pdf = asyncHandler(async (req, res) => {
     const doc = new PDFDocument({ margin: 50 });
     doc.pipe(res);
 
-    doc.fontSize(14).fillColor("#1e3a8a").text(colegioRows[0]?.nombre || "Establecimiento Educacional", { align: "center" });
-    if (colegioRows[0]?.rbd) doc.fontSize(9).fillColor("#64748b").text(`RBD: ${colegioRows[0].rbd}`, { align: "center" });
+    doc.fontSize(14)
+        .fillColor("#1e3a8a")
+        .text(colegioRows[0]?.nombre || "Establecimiento Educacional", { align: "center" });
+    if (colegioRows[0]?.rbd)
+        doc.fontSize(9).fillColor("#64748b").text(`RBD: ${colegioRows[0].rbd}`, { align: "center" });
     doc.moveDown(0.8);
     doc.fillColor("#000000");
-    doc
-        .moveTo(50, doc.y)
+    doc.moveTo(50, doc.y)
         .lineTo(doc.page.width - 50, doc.y)
         .strokeColor("#cbd5e1")
         .stroke();
     doc.moveDown(0.8);
 
     doc.fontSize(16).fillColor("#0f172a").text("Acta de Mediación Escolar", { underline: true });
-    doc.fontSize(10).fillColor("#475569").text(`Caso ${casoRows[0]?.folio || ""} — ${casoRows[0]?.estudiante || ""}`);
+    doc.fontSize(10)
+        .fillColor("#475569")
+        .text(`Caso ${casoRows[0]?.folio || ""} — ${casoRows[0]?.estudiante || ""}`);
     doc.fillColor("#000000").moveDown(0.6);
 
-    doc.fontSize(10).fillColor("#475569").text("Fecha de la mediación:", { continued: true }).fillColor("#000000").text(` ${mediacion.fechaMediacion}`);
-    doc.fontSize(10).fillColor("#475569").text("Mediador(a):", { continued: true }).fillColor("#000000").text(` ${mediacion.mediador}`);
-    doc.fontSize(10).fillColor("#475569").text("Participantes:", { continued: true }).fillColor("#000000").text(` ${mediacion.participantes}`);
+    doc.fontSize(10)
+        .fillColor("#475569")
+        .text("Fecha de la mediación:", { continued: true })
+        .fillColor("#000000")
+        .text(` ${mediacion.fechaMediacion}`);
+    doc.fontSize(10)
+        .fillColor("#475569")
+        .text("Mediador(a):", { continued: true })
+        .fillColor("#000000")
+        .text(` ${mediacion.mediador}`);
+    doc.fontSize(10)
+        .fillColor("#475569")
+        .text("Participantes:", { continued: true })
+        .fillColor("#000000")
+        .text(` ${mediacion.participantes}`);
     doc.moveDown(0.6);
 
     doc.fontSize(12).fillColor("#1e3a8a").text("Acuerdo Alcanzado", { underline: true });
@@ -169,7 +185,9 @@ const pdf = asyncHandler(async (req, res) => {
     } else {
         compromisos.forEach((c) => {
             const marca = c.cumplido ? "[Cumplido]" : "[Pendiente]";
-            doc.fontSize(9).fillColor(c.cumplido ? "#15803d" : "#475569").text(`${marca} `, { continued: true });
+            doc.fontSize(9)
+                .fillColor(c.cumplido ? "#15803d" : "#475569")
+                .text(`${marca} `, { continued: true });
             doc.fillColor("#000000").text(
                 `${c.descripcion}${c.responsable ? ` — Responsable: ${c.responsable}` : ""}${c.fechaLimite ? ` (plazo: ${c.fechaLimite})` : ""}`
             );
@@ -177,17 +195,27 @@ const pdf = asyncHandler(async (req, res) => {
     }
 
     doc.moveDown(2);
-    doc.fontSize(9).fillColor("#64748b").text(
-        "Este documento debe imprimirse y ser firmado físicamente por las partes y el mediador(a). Una vez firmado, debe digitalizarse y adjuntarse en el sistema como medio de verificación."
-    );
+    doc.fontSize(9)
+        .fillColor("#64748b")
+        .text(
+            "Este documento debe imprimirse y ser firmado físicamente por las partes y el mediador(a). Una vez firmado, debe digitalizarse y adjuntarse en el sistema como medio de verificación."
+        );
     doc.moveDown(2.5);
 
     const anchoFirma = (doc.page.width - 100) / 2 - 10;
     const yFirma = doc.y;
-    doc.moveTo(50, yFirma).lineTo(50 + anchoFirma, yFirma).strokeColor("#000000").stroke();
-    doc.moveTo(doc.page.width - 50 - anchoFirma, yFirma).lineTo(doc.page.width - 50, yFirma).stroke();
+    doc.moveTo(50, yFirma)
+        .lineTo(50 + anchoFirma, yFirma)
+        .strokeColor("#000000")
+        .stroke();
+    doc.moveTo(doc.page.width - 50 - anchoFirma, yFirma)
+        .lineTo(doc.page.width - 50, yFirma)
+        .stroke();
     doc.fontSize(9).text("Firma Mediador(a)", 50, yFirma + 5, { width: anchoFirma, align: "center" });
-    doc.fontSize(9).text("Firma Participante(s)", doc.page.width - 50 - anchoFirma, yFirma + 5, { width: anchoFirma, align: "center" });
+    doc.fontSize(9).text("Firma Participante(s)", doc.page.width - 50 - anchoFirma, yFirma + 5, {
+        width: anchoFirma,
+        align: "center",
+    });
 
     doc.end();
 });

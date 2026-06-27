@@ -41,10 +41,10 @@ const Config = (() => {
             ? registros
                   .map(
                       (r) => `<tr>
-                          <td class="text-slate-500">${new Date(r.creadoEn).toLocaleString("es-CL")}</td>
-                          <td>${r.usuario || "-"}</td>
-                          <td><span class="badge bg-slate-100 text-slate-700 status-badge text-xs">${r.accion}</span></td>
-                          <td class="text-slate-400 font-mono text-xs">${r.detalle && Object.keys(r.detalle).length ? JSON.stringify(r.detalle) : "-"}</td>
+                          <td class="text-slate-500">${App.escapeHtml(new Date(r.creadoEn).toLocaleString("es-CL"))}</td>
+                          <td>${App.escapeHtml(r.usuario) || "-"}</td>
+                          <td><span class="badge bg-slate-100 text-slate-700 status-badge text-xs">${App.escapeHtml(r.accion)}</span></td>
+                          <td class="text-slate-400 font-mono text-xs">${r.detalle && Object.keys(r.detalle).length ? App.escapeHtml(JSON.stringify(r.detalle)) : "-"}</td>
                       </tr>`
                   )
                   .join("")
@@ -56,7 +56,10 @@ const Config = (() => {
         const lista = document.getElementById("lista-purga");
         lista.innerHTML = data.casos.length
             ? data.casos
-                  .map((c) => `<div class="flex justify-between bg-amber-50 px-2 py-1 rounded"><span>${c.folio} — ${c.estudiante}</span><span class="text-slate-400">Cerrado ${c.fechaCierre}</span></div>`)
+                  .map(
+                      (c) =>
+                          `<div class="flex justify-between bg-amber-50 px-2 py-1 rounded"><span>${App.escapeHtml(c.folio)} — ${App.escapeHtml(c.estudiante)}</span><span class="text-slate-400">Cerrado ${App.escapeHtml(c.fechaCierre)}</span></div>`
+                  )
                   .join("")
             : `<p class="text-slate-400 italic">No hay casos elegibles para purga (retención vigente: ${data.diasRetencion} días).</p>`;
     }
@@ -92,7 +95,7 @@ const Config = (() => {
                   .map(
                       (m) =>
                           `<div class="flex justify-between items-center bg-slate-50 px-2 py-1 rounded">
-                              <span>${m.indicador}: meta ${m.metaValor}</span>
+                              <span>${App.escapeHtml(m.indicador)}: meta ${m.metaValor}</span>
                               <button onclick="Config.eliminarMetaPme(${m.id})" class="text-red-600 hover:underline">Quitar</button>
                           </div>`
                   )
@@ -106,7 +109,10 @@ const Config = (() => {
         const metaValor = parseFloat(document.getElementById("meta-valor").value);
         const descripcion = document.getElementById("meta-descripcion").value.trim();
         try {
-            await Api.apiFetch("/reportes/metas-pme", { method: "POST", body: JSON.stringify({ indicador, metaValor, descripcion }) });
+            await Api.apiFetch("/reportes/metas-pme", {
+                method: "POST",
+                body: JSON.stringify({ indicador, metaValor, descripcion }),
+            });
             document.getElementById("form-meta-pme").reset();
             await renderMetasPme();
             App.mostrarToast("Meta PME agregada.", "success");

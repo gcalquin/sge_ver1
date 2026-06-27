@@ -19,6 +19,26 @@ function tsQueryBusqueda(param) {
     return `regexp_replace(trim(inmutable_unaccent(${param})), '\\s+', ':* & ', 'g') || ':*'`;
 }
 
+// Recorta espacios sobrantes (extremos y dobles internos) para que "Juan  Pérez "
+// y "Juan Pérez" no queden como dos entradas distintas en caso_estudiantes_adicionales.
+function normalizarNombre(nombre) {
+    return nombre.trim().replace(/\s+/g, " ");
+}
+
+// Dedupe case-insensitive de una lista de nombres ya normalizados, preservando
+// el primer valor con el casing que escribió el usuario.
+function dedupeNombres(nombres) {
+    const vistos = new Set();
+    const resultado = [];
+    for (const nombre of nombres) {
+        const clave = nombre.toLowerCase();
+        if (vistos.has(clave)) continue;
+        vistos.add(clave);
+        resultado.push(nombre);
+    }
+    return resultado;
+}
+
 function aCsv(filas, columnas) {
     const escapar = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const encabezado = columnas.join(",");
@@ -27,58 +47,68 @@ function aCsv(filas, columnas) {
 }
 
 async function getCasoDetalle(colegioId, id, usuario) {
-    const { rows: casoRows } = await pool.query(`SELECT * FROM v_casos WHERE colegio_id = $1 AND id = $2`, [colegioId, id]);
+    const { rows: casoRows } = await pool.query(`SELECT * FROM v_casos WHERE colegio_id = $1 AND id = $2`, [
+        colegioId,
+        id,
+    ]);
     const caso = casoRows[0];
     if (!caso) return null;
 
-    const { rows: bitacora } = await pool.query(
-        `SELECT b.id, b.tipo, b.fecha_ejecucion AS fecha, b.contenido,
-                b.subtipo_entrevista AS subtipo, b.estado_medida AS "estadoMedida",
-                b.motivo_cierre AS motivo, b.evaluacion_cierre AS evaluacion,
-                b.consentimiento_apoderado AS "consentimientoApoderado",
-                b.justificacion_sin_consentimiento AS "justificacionSinConsentimiento",
-                b.hash,
-                op.nombre AS operador,
-                (SELECT count(*) FROM adjuntos a WHERE a.bitacora_id = b.id) AS adjuntos
-         FROM bitacora b
-         JOIN usuarios op ON op.id = b.operador_id
-         WHERE b.caso_id = $1
-         ORDER BY b.id`,
-        [id]
-    );
+    // Estas consultas son independientes entre sí (solo dependen de `id`/`colegioId`,
+    // no del resultado de las otras), así que se disparan en paralelo en vez de
+    // pagar la latencia de red de cada una en serie.
+    const [
+        { rows: bitacora },
+        { rows: pasosProtocolo },
+        { rows: derivaciones },
+        mediaciones,
+        { rows: estudiantesAdicionales },
+        { rows: colegioRows },
+        { rows: overrideRows },
+    ] = await Promise.all([
+        pool.query(
+            `SELECT b.id, b.tipo, b.fecha_ejecucion AS fecha, b.contenido,
+                    b.subtipo_entrevista AS subtipo, b.estado_medida AS "estadoMedida",
+                    b.motivo_cierre AS motivo, b.evaluacion_cierre AS evaluacion,
+                    b.consentimiento_apoderado AS "consentimientoApoderado",
+                    b.justificacion_sin_consentimiento AS "justificacionSinConsentimiento",
+                    b.hash,
+                    op.nombre AS operador,
+                    (SELECT count(*) FROM adjuntos a WHERE a.bitacora_id = b.id) AS adjuntos
+             FROM bitacora b
+             JOIN usuarios op ON op.id = b.operador_id
+             WHERE b.caso_id = $1
+             ORDER BY b.id`,
+            [id]
+        ),
+        pool.query(
+            `SELECT id, orden, descripcion, plazo_dias AS "plazoDias", fecha_limite AS "fechaLimite",
+                    completado, fecha_completado AS "fechaCompletado"
+             FROM caso_pasos_protocolo WHERE caso_id = $1 ORDER BY orden`,
+            [id]
+        ),
+        pool.query(
+            `SELECT d.id, d.institucion, d.tipo, d.fecha_derivacion AS "fechaDerivacion", d.folio_externo AS "folioExterno",
+                    d.estado, d.notas, (SELECT count(*) FROM adjuntos ad WHERE ad.derivacion_id = d.id) AS adjuntos
+             FROM derivaciones d WHERE d.caso_id = $1 ORDER BY d.id DESC`,
+            [id]
+        ),
+        obtenerMediacionesDeCaso(id),
+        pool.query("SELECT id, nombre FROM caso_estudiantes_adicionales WHERE caso_id = $1 ORDER BY id", [id]),
+        pool.query("SELECT nombre, rbd FROM colegios WHERE id = $1", [colegioId]),
+        pool.query("SELECT nombre, normativa FROM protocolos_colegio WHERE colegio_id = $1 AND categoria = $2", [
+            colegioId,
+            caso.categoria,
+        ]),
+    ]);
 
-    const { rows: pasosProtocolo } = await pool.query(
-        `SELECT id, orden, descripcion, plazo_dias AS "plazoDias", fecha_limite AS "fechaLimite",
-                completado, fecha_completado AS "fechaCompletado"
-         FROM caso_pasos_protocolo WHERE caso_id = $1 ORDER BY orden`,
-        [id]
-    );
-
-    const { rows: derivaciones } = await pool.query(
-        `SELECT d.id, d.institucion, d.tipo, d.fecha_derivacion AS "fechaDerivacion", d.folio_externo AS "folioExterno",
-                d.estado, d.notas, (SELECT count(*) FROM adjuntos ad WHERE ad.derivacion_id = d.id) AS adjuntos
-         FROM derivaciones d WHERE d.caso_id = $1 ORDER BY d.id DESC`,
-        [id]
-    );
-
-    const mediaciones = await obtenerMediacionesDeCaso(id);
-
-    const { rows: estudiantesAdicionales } = await pool.query(
-        "SELECT id, nombre FROM caso_estudiantes_adicionales WHERE caso_id = $1 ORDER BY id",
-        [id]
-    );
-
-    const { rows: colegioRows } = await pool.query("SELECT nombre, rbd FROM colegios WHERE id = $1", [colegioId]);
-    const { rows: overrideRows } = await pool.query(
-        "SELECT nombre, normativa FROM protocolos_colegio WHERE colegio_id = $1 AND categoria = $2",
-        [colegioId, caso.categoria]
-    );
     const { rows: protocoloRows } = overrideRows[0]
         ? { rows: overrideRows }
         : await pool.query("SELECT nombre, normativa FROM protocolos WHERE categoria = $1", [caso.categoria]);
 
     const puedeVerPie =
-        usuario && (usuario.rol === "admin" || usuario.rol === "superadmin" || usuario.especialidad === "Psicólogo PIE");
+        usuario &&
+        (usuario.rol === "admin" || usuario.rol === "superadmin" || usuario.especialidad === "Psicólogo PIE");
     const denunciaObligatoriaPendiente =
         caso.categoria === "Vulneración de Derechos" && !derivaciones.some((d) => d.tipo === "Denuncia Obligatoria");
 
@@ -98,7 +128,11 @@ async function getCasoDetalle(colegioId, id, usuario) {
         responsableId: caso.responsable_id,
         curso: caso.curso,
         tieneNee: caso.tiene_nee,
-        diagnosticoPie: !caso.diagnostico_pie ? null : puedeVerPie ? caso.diagnostico_pie : "(Información PIE confidencial — acceso restringido)",
+        diagnosticoPie: !caso.diagnostico_pie
+            ? null
+            : puedeVerPie
+              ? caso.diagnostico_pie
+              : "(Información PIE confidencial — acceso restringido)",
         beneficiosJunaeb: caso.beneficios_junaeb,
         denunciaObligatoriaPendiente,
         colegioNombre: colegioRows[0]?.nombre || null,
@@ -113,7 +147,14 @@ async function getCasoDetalle(colegioId, id, usuario) {
 }
 
 const listar = asyncHandler(async (req, res) => {
-    const { estado = "Todos", categoria = "Todos", responsable = "Todos", search = "", limit = 50, offset = 0 } = req.query;
+    const {
+        estado = "Todos",
+        categoria = "Todos",
+        responsable = "Todos",
+        search = "",
+        limit = 50,
+        offset = 0,
+    } = req.query;
 
     const condiciones = ["vc.colegio_id = $1"];
     const valores = [req.colegioId];
@@ -143,6 +184,11 @@ const listar = asyncHandler(async (req, res) => {
         );
     }
 
+    const { rows: countRows } = await pool.query(
+        `SELECT count(*)::int AS total FROM v_casos vc WHERE ${condiciones.join(" AND ")}`,
+        valores
+    );
+
     valores.push(Math.min(Number(limit) || 50, 200));
     valores.push(Number(offset) || 0);
 
@@ -161,15 +207,18 @@ const listar = asyncHandler(async (req, res) => {
         valores
     );
 
-    const { rows: colegioRows } = await pool.query("SELECT dias_alerta_critico FROM colegios WHERE id = $1", [req.colegioId]);
+    const { rows: colegioRows } = await pool.query("SELECT dias_alerta_critico FROM colegios WHERE id = $1", [
+        req.colegioId,
+    ]);
     const diasAlertaCritico = colegioRows[0]?.dias_alerta_critico ?? 10;
 
-    res.json(
-        rows.map((c) => ({
+    res.json({
+        total: countRows[0].total,
+        casos: rows.map((c) => ({
             ...c,
             alertaCritica: c.estado !== "Cerrado" && c.diasInactivo >= diasAlertaCritico,
-        }))
-    );
+        })),
+    });
 });
 
 const dashboard = asyncHandler(async (req, res) => {
@@ -236,7 +285,9 @@ const dashboard = asyncHandler(async (req, res) => {
     const efectivas = casesWithMedida.filter(
         (c) =>
             c.estado === "Cerrado" &&
-            (bitacoraPorCaso.get(c.id) || []).some((b) => b.tipo === "Cierre" && b.motivo_cierre === "Exitosa sin Reincidencia")
+            (bitacoraPorCaso.get(c.id) || []).some(
+                (b) => b.tipo === "Cierre" && b.motivo_cierre === "Exitosa sin Reincidencia"
+            )
     ).length;
     const noEfectivas = casesWithMedida.length - efectivas;
 
@@ -255,7 +306,8 @@ const dashboard = asyncHandler(async (req, res) => {
         `SELECT id, indicador, meta_valor AS "metaValor", descripcion FROM metas_pme WHERE colegio_id = $1 ORDER BY id`,
         [req.colegioId]
     );
-    const tasaExitoMedidas = casesWithMedida.length > 0 ? Math.round((efectivas / casesWithMedida.length) * 1000) / 10 : null;
+    const tasaExitoMedidas =
+        casesWithMedida.length > 0 ? Math.round((efectivas / casesWithMedida.length) * 1000) / 10 : null;
     const tasaCierre = filtrados.length > 0 ? Math.round((kpis.cerrados / filtrados.length) * 1000) / 10 : null;
     const indicadoresCalculados = {
         "Tasa de éxito de medidas aplicadas (%)": tasaExitoMedidas,
@@ -375,7 +427,8 @@ const crear = asyncHandler(async (req, res) => {
         );
         casoId = nuevoCaso[0].id;
 
-        for (const nombreAdicional of estudiantesAdicionales) {
+        const nombresAdicionales = dedupeNombres(estudiantesAdicionales.map(normalizarNombre));
+        for (const nombreAdicional of nombresAdicionales) {
             await client.query("INSERT INTO caso_estudiantes_adicionales (caso_id, nombre) VALUES ($1, $2)", [
                 casoId,
                 nombreAdicional,
@@ -383,7 +436,12 @@ const crear = asyncHandler(async (req, res) => {
         }
 
         const contenidoApertura = "Apertura de expediente institucional.";
-        const hash = calcularHash({ contenido: contenidoApertura, fecha: fechaApertura, operadorId: req.usuario.id, hashAnterior: null });
+        const hash = calcularHash({
+            contenido: contenidoApertura,
+            fecha: fechaApertura,
+            operadorId: req.usuario.id,
+            hashAnterior: null,
+        });
         await client.query(
             `INSERT INTO bitacora (caso_id, tipo, fecha_ejecucion, operador_id, contenido, hash, hash_anterior)
              VALUES ($1, 'Apertura', $2, $3, $4, $5, NULL)`,
@@ -440,11 +498,17 @@ const actualizar = asyncHandler(async (req, res) => {
     if (cierre) {
         if (caso.estado === "Cerrado") return res.status(409).json({ error: "El caso ya se encuentra cerrado." });
 
-        const { rows: ultimaRows } = await pool.query("SELECT hash FROM bitacora WHERE caso_id = $1 ORDER BY id DESC LIMIT 1", [
-            req.params.id,
-        ]);
+        const { rows: ultimaRows } = await pool.query(
+            "SELECT hash FROM bitacora WHERE caso_id = $1 ORDER BY id DESC LIMIT 1",
+            [req.params.id]
+        );
         const hashAnterior = ultimaRows[0]?.hash || null;
-        const hash = calcularHash({ contenido: cierre.evaluacion, fecha: cierre.fecha, operadorId: req.usuario.id, hashAnterior });
+        const hash = calcularHash({
+            contenido: cierre.evaluacion,
+            fecha: cierre.fecha,
+            operadorId: req.usuario.id,
+            hashAnterior,
+        });
 
         const client = await pool.connect();
         try {
@@ -491,15 +555,24 @@ const actualizar = asyncHandler(async (req, res) => {
 });
 
 const agregarEstudianteAdicional = asyncHandler(async (req, res) => {
-    const { rows } = await pool.query("SELECT id FROM casos WHERE id = $1 AND colegio_id = $2", [
+    const { rows } = await pool.query("SELECT estudiante FROM casos WHERE id = $1 AND colegio_id = $2", [
         req.params.id,
         req.colegioId,
     ]);
     if (!rows[0]) return res.status(404).json({ error: "Caso no encontrado." });
 
+    const nombre = normalizarNombre(req.body.nombre);
+    const { rows: existentes } = await pool.query(
+        "SELECT 1 FROM caso_estudiantes_adicionales WHERE caso_id = $1 AND lower(nombre) = lower($2)",
+        [req.params.id, nombre]
+    );
+    if (existentes[0] || nombre.toLowerCase() === rows[0].estudiante.toLowerCase()) {
+        return res.status(409).json({ error: "Ese estudiante ya está vinculado a este caso." });
+    }
+
     await pool.query("INSERT INTO caso_estudiantes_adicionales (caso_id, nombre) VALUES ($1, $2)", [
         req.params.id,
-        req.body.nombre,
+        nombre,
     ]);
     res.status(201).json(await getCasoDetalle(req.colegioId, req.params.id, req.usuario));
 });
@@ -517,7 +590,8 @@ const eliminarEstudianteAdicional = asyncHandler(async (req, res) => {
 });
 
 const bitacora = asyncHandler(async (req, res) => {
-    const { tipo, fecha, contenido, subtipo, estadoMedida, consentimientoApoderado, justificacionSinConsentimiento } = req.body;
+    const { tipo, fecha, contenido, subtipo, estadoMedida, consentimientoApoderado, justificacionSinConsentimiento } =
+        req.body;
     const tipoEnum = TIPO_BITACORA[tipo];
 
     const { rows } = await pool.query("SELECT estado FROM casos WHERE id = $1 AND colegio_id = $2", [
@@ -530,9 +604,10 @@ const bitacora = asyncHandler(async (req, res) => {
         return res.status(409).json({ error: "El caso está cerrado, no admite nuevas entradas de bitácora." });
     }
 
-    const { rows: ultimaRows } = await pool.query("SELECT hash FROM bitacora WHERE caso_id = $1 ORDER BY id DESC LIMIT 1", [
-        req.params.id,
-    ]);
+    const { rows: ultimaRows } = await pool.query(
+        "SELECT hash FROM bitacora WHERE caso_id = $1 ORDER BY id DESC LIMIT 1",
+        [req.params.id]
+    );
     const hashAnterior = ultimaRows[0]?.hash || null;
     const hash = calcularHash({ contenido, fecha, operadorId: req.usuario.id, hashAnterior });
 
@@ -577,16 +652,19 @@ function dibujarExpedientePdf(doc, caso) {
     const hoy = new Date().toISOString().slice(0, 10);
 
     // Encabezado institucional
-    doc.fontSize(14).fillColor("#1e3a8a").text(caso.colegioNombre || "Establecimiento Educacional", { align: "center" });
+    doc.fontSize(14)
+        .fillColor("#1e3a8a")
+        .text(caso.colegioNombre || "Establecimiento Educacional", { align: "center" });
     if (caso.colegioRbd) {
         doc.fontSize(9).fillColor("#64748b").text(`RBD: ${caso.colegioRbd}`, { align: "center" });
     }
     doc.moveDown(0.5);
-    doc.fontSize(9).fillColor("#94a3b8").text(`Documento generado el ${new Date().toLocaleString("es-CL")}`, { align: "center" });
+    doc.fontSize(9)
+        .fillColor("#94a3b8")
+        .text(`Documento generado el ${new Date().toLocaleString("es-CL")}`, { align: "center" });
     doc.moveDown(0.8);
     doc.fillColor("#000000");
-    doc
-        .moveTo(50, doc.y)
+    doc.moveTo(50, doc.y)
         .lineTo(doc.page.width - 50, doc.y)
         .strokeColor("#cbd5e1")
         .stroke();
@@ -621,9 +699,11 @@ function dibujarExpedientePdf(doc, caso) {
 
     if (caso.denunciaObligatoriaPendiente) {
         seccionTitulo(doc, "Aviso Legal");
-        doc.fillColor("#b91c1c").fontSize(10).text(
-            "DENUNCIA OBLIGATORIA PENDIENTE: este caso de Vulneración de Derechos aún no registra una denuncia a Carabineros, PDI, Fiscalía o Tribunal de Familia, conforme al Art. 175 letra e) del Código Procesal Penal."
-        );
+        doc.fillColor("#b91c1c")
+            .fontSize(10)
+            .text(
+                "DENUNCIA OBLIGATORIA PENDIENTE: este caso de Vulneración de Derechos aún no registra una denuncia a Carabineros, PDI, Fiscalía o Tribunal de Familia, conforme al Art. 175 letra e) del Código Procesal Penal."
+            );
         doc.fillColor("#000000");
     }
 
@@ -633,7 +713,9 @@ function dibujarExpedientePdf(doc, caso) {
     seccionTitulo(doc, "Protocolo de Actuación Aplicado");
     if (caso.protocoloNombre) {
         doc.fontSize(10).text(caso.protocoloNombre, { continued: false });
-        doc.fontSize(8).fillColor("#64748b").text(caso.protocoloNormativa || "");
+        doc.fontSize(8)
+            .fillColor("#64748b")
+            .text(caso.protocoloNormativa || "");
         doc.fillColor("#000000");
         doc.moveDown(0.3);
     }
@@ -643,9 +725,11 @@ function dibujarExpedientePdf(doc, caso) {
         caso.pasosProtocolo.forEach((paso) => {
             const vencido = !paso.completado && paso.fechaLimite && paso.fechaLimite < hoy;
             const marca = paso.completado ? "[Completado]" : vencido ? "[VENCIDO]" : "[Pendiente]";
-            doc.fontSize(9).fillColor(vencido ? "#b91c1c" : paso.completado ? "#15803d" : "#475569").text(`${marca} `, {
-                continued: true,
-            });
+            doc.fontSize(9)
+                .fillColor(vencido ? "#b91c1c" : paso.completado ? "#15803d" : "#475569")
+                .text(`${marca} `, {
+                    continued: true,
+                });
             doc.fillColor("#000000").text(`${paso.descripcion} (plazo: ${paso.fechaLimite || "sin definir"})`);
         });
     }
@@ -656,9 +740,9 @@ function dibujarExpedientePdf(doc, caso) {
     } else {
         caso.derivaciones.forEach((d) => {
             doc.fontSize(10).text(`${d.institucion} — ${d.tipo} (${d.estado})`);
-            doc.fontSize(9).fillColor("#475569").text(
-                `Fecha: ${d.fechaDerivacion}${d.folioExterno ? ` — Folio externo: ${d.folioExterno}` : ""}`
-            );
+            doc.fontSize(9)
+                .fillColor("#475569")
+                .text(`Fecha: ${d.fechaDerivacion}${d.folioExterno ? ` — Folio externo: ${d.folioExterno}` : ""}`);
             if (d.notas) doc.text(`Notas: ${d.notas}`);
             if (Number(d.adjuntos) > 0) doc.text(`Medios de verificación adjuntos: ${d.adjuntos}`);
             doc.fillColor("#000000");
@@ -674,12 +758,15 @@ function dibujarExpedientePdf(doc, caso) {
             doc.fontSize(10).text(`Mediación del ${m.fechaMediacion} — Mediador(a): ${m.mediador}`);
             doc.fontSize(9).fillColor("#475569").text(`Participantes: ${m.participantes}`);
             doc.fillColor("#000000").text(`Acuerdo: ${m.acuerdo}`);
-            if (Number(m.adjuntos) > 0) doc.fontSize(9).fillColor("#475569").text(`Acta firmada adjunta: sí (${m.adjuntos} archivo(s))`);
+            if (Number(m.adjuntos) > 0)
+                doc.fontSize(9).fillColor("#475569").text(`Acta firmada adjunta: sí (${m.adjuntos} archivo(s))`);
             doc.fillColor("#000000");
             if (m.compromisos.length > 0) {
                 m.compromisos.forEach((c) => {
                     const marca = c.cumplido ? "[Cumplido]" : "[Pendiente]";
-                    doc.fontSize(9).fillColor(c.cumplido ? "#15803d" : "#475569").text(`  ${marca} `, { continued: true });
+                    doc.fontSize(9)
+                        .fillColor(c.cumplido ? "#15803d" : "#475569")
+                        .text(`  ${marca} `, { continued: true });
                     doc.fillColor("#000000").text(
                         `${c.descripcion}${c.responsable ? ` — Responsable: ${c.responsable}` : ""}${c.fechaLimite ? ` (plazo: ${c.fechaLimite})` : ""}`
                     );
@@ -694,12 +781,16 @@ function dibujarExpedientePdf(doc, caso) {
         doc.fontSize(10).text("Sin entradas de bitácora registradas.");
     } else {
         caso.bitacora.forEach((entrada) => {
-            doc.fontSize(10).fillColor("#0f172a").text(`[${entrada.fecha}] ${entrada.tipo} — Operador: ${entrada.operador}`);
+            doc.fontSize(10)
+                .fillColor("#0f172a")
+                .text(`[${entrada.fecha}] ${entrada.tipo} — Operador: ${entrada.operador}`);
             doc.fillColor("#000000").fontSize(9).text(entrada.contenido);
             if (entrada.tipo === "Entrevista" && entrada.consentimientoApoderado === false) {
-                doc.fontSize(8).fillColor("#b45309").text(
-                    `Entrevista sin consentimiento informado del apoderado. Justificación: ${entrada.justificacionSinConsentimiento || "no registrada"}.`
-                );
+                doc.fontSize(8)
+                    .fillColor("#b45309")
+                    .text(
+                        `Entrevista sin consentimiento informado del apoderado. Justificación: ${entrada.justificacionSinConsentimiento || "no registrada"}.`
+                    );
                 doc.fillColor("#000000");
             }
             doc.moveDown(0.4);
@@ -707,17 +798,21 @@ function dibujarExpedientePdf(doc, caso) {
     }
 
     seccionTitulo(doc, "Cierre del Documento");
-    doc.fontSize(8).fillColor("#94a3b8").text(
-        "Este documento es un respaldo oficial generado automáticamente por el Sistema de Gestión de Casos Estudiantiles (SGE) y refleja el estado del expediente al momento de su generación."
-    );
+    doc.fontSize(8)
+        .fillColor("#94a3b8")
+        .text(
+            "Este documento es un respaldo oficial generado automáticamente por el Sistema de Gestión de Casos Estudiantiles (SGE) y refleja el estado del expediente al momento de su generación."
+        );
 
     const totalPaginas = doc.bufferedPageRange().count;
     for (let i = 0; i < totalPaginas; i++) {
         doc.switchToPage(i);
-        doc.fontSize(8).fillColor("#94a3b8").text(`Página ${i + 1} de ${totalPaginas}`, 50, doc.page.height - 40, {
-            width: doc.page.width - 100,
-            align: "center",
-        });
+        doc.fontSize(8)
+            .fillColor("#94a3b8")
+            .text(`Página ${i + 1} de ${totalPaginas}`, 50, doc.page.height - 40, {
+                width: doc.page.width - 100,
+                align: "center",
+            });
     }
 }
 
@@ -773,7 +868,9 @@ const exportarPdfsZip = asyncHandler(async (req, res) => {
         return res.status(404).json({ error: "No hay expedientes que coincidan con los filtros." });
     }
     if (casosFiltrados.length > 200) {
-        return res.status(400).json({ error: "Demasiados expedientes (máximo 200 por exportación). Acota los filtros." });
+        return res
+            .status(400)
+            .json({ error: "Demasiados expedientes (máximo 200 por exportación). Acota los filtros." });
     }
 
     res.setHeader("Content-Type", "application/zip");
@@ -861,7 +958,9 @@ const purgar = asyncHandler(async (req, res) => {
     if (!rows[0]) {
         return res
             .status(409)
-            .json({ error: "El caso no es elegible para purga (no está cerrado o no ha superado el período de retención)." });
+            .json({
+                error: "El caso no es elegible para purga (no está cerrado o no ha superado el período de retención).",
+            });
     }
     res.json({ ok: true });
 });

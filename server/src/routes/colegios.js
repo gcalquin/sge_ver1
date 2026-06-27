@@ -3,7 +3,11 @@ const { validar } = require("../middleware/validate");
 const { requireAuth, requireRol, requireColegioContexto } = require("../middleware/auth");
 const { auditar } = require("../middleware/audit");
 const { uploadLogo } = require("../config/uploadLogo");
-const { crearColegioSchema, actualizarColegioSchema, actualizarConfiguracionSchema } = require("../validation/colegios");
+const {
+    crearColegioSchema,
+    actualizarColegioSchema,
+    actualizarConfiguracionSchema,
+} = require("../validation/colegios");
 const controller = require("../controllers/colegios");
 
 const router = express.Router();

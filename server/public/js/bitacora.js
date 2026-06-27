@@ -41,12 +41,12 @@ const Bitacora = (() => {
                     <div class="timeline-icon ${iconBg}">${icon}</div>
                     <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
                         <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
-                            <span class="text-xs font-bold text-slate-800">${titulo}</span>
-                            <span class="text-xs text-slate-900 bg-slate-100 font-bold px-2 py-0.5 rounded border border-slate-300 shadow-2xs">${item.fecha}</span>
+                            <span class="text-xs font-bold text-slate-800">${App.escapeHtml(titulo)}</span>
+                            <span class="text-xs text-slate-900 bg-slate-100 font-bold px-2 py-0.5 rounded border border-slate-300 shadow-2xs">${App.escapeHtml(item.fecha)}</span>
                         </div>
-                        <p class="text-xs text-slate-600 mb-1 leading-relaxed">${item.contenido}</p>
+                        <p class="text-xs text-slate-600 mb-1 leading-relaxed">${App.escapeHtml(item.contenido)}</p>
                         <div class="text-[9px] text-slate-400 border-t pt-1 mt-2 flex justify-between items-center">
-                            <span>Operador Firmante: ${item.operador}</span>
+                            <span>Operador Firmante: ${App.escapeHtml(item.operador)}</span>
                             ${adjuntosBtn}
                         </div>
                         <div id="adjuntos-list-${item.id}" class="hidden mt-2 text-xs space-y-1 no-print"></div>
@@ -66,7 +66,7 @@ const Bitacora = (() => {
         contenedor.innerHTML = adjuntos
             .map(
                 (a) =>
-                    `<a href="${Api.API_BASE}/casos/${casoId}/adjuntos/${a.id}" target="_blank" class="d-block text-blue-700"><i class="fa-solid fa-paperclip me-1"></i>${a.nombre}</a>`
+                    `<a href="${Api.API_BASE}/casos/${casoId}/adjuntos/${a.id}" target="_blank" class="d-block text-blue-700"><i class="fa-solid fa-paperclip me-1"></i>${App.escapeHtml(a.nombre)}</a>`
             )
             .join("");
         contenedor.classList.remove("hidden");
@@ -129,7 +129,9 @@ const Bitacora = (() => {
             }
             payload.consentimientoApoderado = document.getElementById("in-consentimiento").checked;
             if (!payload.consentimientoApoderado) {
-                payload.justificacionSinConsentimiento = document.getElementById("in-justificacion-consentimiento").value;
+                payload.justificacionSinConsentimiento = document.getElementById(
+                    "in-justificacion-consentimiento"
+                ).value;
             }
         }
         if (tipo === "medida") payload.estadoMedida = document.getElementById("in-medida-estado").value;
@@ -157,9 +159,16 @@ const Bitacora = (() => {
             // Sin conexión real (no un error HTTP del servidor) y sin adjunto: se encola
             // localmente y se reintenta automáticamente cuando el navegador reconecte.
             if (err instanceof TypeError && !archivo) {
-                Offline.encolar({ path: `/casos/${App.estado.casoSeleccionadoId}/bitacora`, method: "POST", body: payload });
+                Offline.encolar({
+                    path: `/casos/${App.estado.casoSeleccionadoId}/bitacora`,
+                    method: "POST",
+                    body: payload,
+                });
                 bootstrap.Modal.getInstance(document.getElementById("modalAccionBitacora")).hide();
-                App.mostrarToast("Sin conexión: la entrada se guardó en este dispositivo y se enviará al reconectar.", "info");
+                App.mostrarToast(
+                    "Sin conexión: la entrada se guardó en este dispositivo y se enviará al reconectar.",
+                    "info"
+                );
                 return;
             }
             App.mostrarToast(err.message, "danger");

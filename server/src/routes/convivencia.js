@@ -26,7 +26,12 @@ router.post(
     auditar("convivencia.actividad.crear"),
     controller.crearActividad
 );
-router.delete("/actividades/:id", requireEscritura, auditar("convivencia.actividad.eliminar"), controller.eliminarActividad);
+router.delete(
+    "/actividades/:id",
+    requireEscritura,
+    auditar("convivencia.actividad.eliminar"),
+    controller.eliminarActividad
+);
 
 router.get("/actividades/:actId/bitacora", controller.listarBitacoraActividad);
 router.post(

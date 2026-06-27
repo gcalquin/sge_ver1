@@ -21,17 +21,20 @@ El proyecto nació como un prototipo 100% estático (`index.html` con `localStor
 Sge/
 ├── CLAUDE.md                          ← este archivo
 ├── ESPECIFICACION-MIGRACION-BACKEND.md  ← spec histórica de la migración localStorage → backend (contexto, ya ejecutada)
-├── index.html                          ← prototipo ESTÁTICO ORIGINAL (localStorage). OBSOLETO, no es lo que corre en producción.
-├── index - respaldo ver 1.html         ← respaldo aún más antiguo del prototipo. OBSOLETO.
+├── .github/workflows/ci.yml            ← CI: lint + migraciones + seed + build:css + tests en cada push/PR
+├── legacy/                             ← prototipo ESTÁTICO ORIGINAL (localStorage), OBSOLETO. No se edita ni se sirve.
+│   ├── index.html
+│   └── index - respaldo ver 1.html
 └── server/                             ← APLICACIÓN REAL (backend + frontend servido por Express)
     ├── src/                           ← backend Node.js/Express
     ├── public/                        ← frontend (HTML/CSS/JS vanilla servido como estático)
     ├── migrations/                    ← node-pg-migrate (histórico de cambios de esquema)
     ├── tests/                         ← vitest + supertest
+    ├── eslint.config.js, .prettierrc.json  ← `npm run lint` / `npm run format`
     └── scripts/                       ← utilitarios puntuales
 ```
 
-**Los dos `index.html` en la raíz de `Sge/` son artefactos heredados del prototipo pre-migración. No se editan ni se sirven — toda la UI real está en `server/public/index.html`.** Si una tarea menciona "el index.html" sin más contexto, casi siempre se refiere a `server/public/index.html`.
+**Los dos HTML en `Sge/legacy/` son artefactos heredados del prototipo pre-migración. No se editan ni se sirven — toda la UI real está en `server/public/index.html`.** Si una tarea menciona "el index.html" sin más contexto, casi siempre se refiere a `server/public/index.html`.
 
 ## 3. Stack tecnológico
 
@@ -125,11 +128,12 @@ Definido en `server/src/db/schema.sql` (fuente de verdad; las migraciones en `se
 
 ## 7. Gotchas críticos (ya mordieron antes — no repetir)
 
-1. **Service Worker (`public/sw.js`) usa cache-first sobre el app shell.** Cualquier cambio a `index.html`, `*.css` o cualquier `*.js` listado en `APP_SHELL` **requiere subir `CACHE_NAME`** (`sge-shell-vN` → `vN+1`) en el mismo cambio, o los usuarios con el sitio ya abierto seguirán viendo la versión vieja indefinidamente (un usuario real reportó esto como "no veo los cambios / no puedo editar"). El SW ya tiene `self.skipWaiting()` + `self.clients.claim()` para que la actualización no requiera cerrar todas las pestañas, pero igual exige el bump de versión.
+1. **Service Worker (`public/sw.js`) usa cache-first sobre el app shell.** Cualquier cambio a `index.html`, `*.css` o cualquier `*.js` listado en `APP_SHELL` requiere que `CACHE_NAME` cambie en el mismo commit, o los usuarios con el sitio ya abierto seguirán viendo la versión vieja indefinidamente (un usuario real reportó esto como "no veo los cambios / no puedo editar"). Esto **ya no depende de la memoria humana**: `npm run build:css` corre automáticamente `scripts/update-sw-version.mjs`, que recalcula `CACHE_NAME` como un hash del contenido real de los archivos de `APP_SHELL` (`sge-shell-<hash>`). Sigue siendo necesario correr `npm run build:css` (o `npm run build:sw` directamente) después de tocar cualquier archivo del app shell — lo que cambió es que ya no hay un número de versión que alguien pueda olvidar subir. El SW ya tiene `self.skipWaiting()` + `self.clients.claim()` para que la actualización no requiera cerrar todas las pestañas.
 2. **`archiver` debe quedar en `^7.0.1`.** `npm install archiver` sin pin trae v8 (ESM-only, sin factory function) y rompe el export ZIP en runtime con `TypeError: archiver is not a function`.
 3. **Orden de rutas Express**: las rutas literales (`/medidas-catalogo`, `/protocolos`) deben declararse antes que los patrones `/:id` o `/:categoria` equivalentes para no capturarlas por error.
 4. **El gating de permisos en el HTML es solo visual.** Todo endpoint de escritura debe repetir la validación de rol en el middleware del backend.
 5. **`to_tsquery('spanish', ...)` no acepta texto plano multi-palabra.** Pasarle directamente `inmutable_unaccent($n) || ':*'` revienta con "error de sintaxis en tsquery" en cuanto el término de búsqueda tiene más de una palabra (ej. "Juan Pérez"). Usar el helper `tsQueryBusqueda(param)` en `casos.js`, que convierte el texto en sintaxis válida (`regexp_replace(..., '\s+', ':* & ', 'g') || ':*'`) antes de pasarlo a `to_tsquery`.
+6. **El logger (`pino`) escribe a stdout, no a un archivo.** Es deliberado (12-factor): la rotación de logs es responsabilidad de quien despliega (pm2, systemd, Docker), no de la app. Al verificar manualmente con `node src/server.js > algo.log 2>&1 &`, ese archivo es un artefacto de la sesión de desarrollo (ya está en `.gitignore` vía `*.log`) — bórralo cuando termines en vez de dejarlo creciendo indefinidamente.
 
 ## 8. Flujo de trabajo / comandos
 
@@ -139,10 +143,14 @@ cp .env.example .env          # configurar DATABASE_URL, SESSION_SECRET, SMTP_*
 npm install
 npm run db:migrate            # aplica server/migrations/*.js
 npm run seed                  # carga usuarios/colegios/casos de demostración
-npm run build:css             # compila Tailwind (tailwind-source.css → tailwind.css)
+npm run build:css             # compila Tailwind (tailwind-source.css → tailwind.css) y reversiona el Service Worker
 npm run dev                   # node --watch src/server.js (puerto definido en .env, por defecto 3000)
 npm test                      # vitest run (tests/*.test.js con supertest)
+npm run lint                  # eslint . (0 errores requeridos; warnings no bloquean)
+npm run format                # prettier --write sobre src/, public/js/, tests/, migrations/
 ```
+
+CI (`.github/workflows/ci.yml`, en la raíz del repo) corre en cada push/PR a `main`: `npm run lint` → `npm run db:migrate` → `npm run seed` → `npm run build:css` → `npm test`, contra un Postgres de servicio efímero.
 
 Variables de entorno relevantes (`.env`, ver `.env.example`): `PORT`, `NODE_ENV`, `LOG_LEVEL`, `DATABASE_URL`, `SESSION_SECRET`, `UPLOAD_DIR`, `MAX_UPLOAD_MB`, `SMTP_*`.
 
@@ -156,3 +164,11 @@ No hay paso de build para el JS de frontend: los archivos en `public/` se sirven
 - Varios `funcionario` con nombre.apellido (ej. `carlos.retamal`, `ana.martinez`) repartidos en los colegios semilla ("Gabriela Mistral", "San Ignacio") bajo el sostenedor "Fundación Educacional Ejemplo".
 
 No modificar estos datos semilla salvo que la tarea lo pida explícitamente; varios flujos de verificación manual dependen de que existan tal cual.
+
+## 10. Mejoras evaluadas y deliberadamente no implementadas
+
+En una auditoría de código completa (2026-06-27) se identificaron ~20 mejoras; la mayoría se implementó (XSS, fileFilter de uploads, trust proxy, rate limit general, paralelización de queries, paginación real, dedupe de estudiantes adicionales, ESLint/Prettier, CI, tests, limpieza de archivos legacy, auto-versionado del Service Worker). Tres quedaron **fuera de alcance a propósito**, no olvidadas:
+
+- **Quitar `'unsafe-inline'` de la CSP / reemplazar los `onclick=""` inline por `addEventListener`.** Requeriría reescribir cientos de manejadores de eventos en `index.html` y los módulos de `public/js/`, con alto riesgo de regresión en toda la UI, a cambio de un beneficio marginal ya que el vector de XSS real (interpolación sin escapar en `innerHTML`) se cerró con `App.escapeHtml`. Si se aborda en el futuro, hacerlo como un proyecto dedicado con cobertura E2E primero, no como parte de un cambio mixto.
+- **Hacer reversibles las migraciones (`down()`)**, que hoy lanzan `Error("no es reversible")`. El patrón actual (cada migración re-ejecuta `schema.sql` completo, idempotente vía `IF NOT EXISTS`) es deliberado y documentado; convertirlo en pasos reversibles exigiría reescribir las 8 migraciones históricas con `DROP COLUMN/TABLE` exactos por paso, con riesgo real de pérdida de datos si algo queda mal escrito. La mitigación real en producción es backup/restore de la base, no `migrate down`.
+- **Partir `controllers/casos.js` (~900 líneas) en varios archivos** (ej. `casos.crud.js`, `casos.pdf.js`, `casos.dashboard.js`). Es un refactor puramente mecánico sin cambio funcional, pero toca el archivo más grande del backend y su wiring de rutas; el riesgo de un `require`/export roto no se justifica sin un motivo funcional concreto que lo dispare. Queda como candidato para la próxima vez que haya que tocar ese archivo de todos modos.

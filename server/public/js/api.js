@@ -25,7 +25,9 @@ const Api = (() => {
             try {
                 res = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: "same-origin" });
             } catch (e) {
-                throw new Error("No se pudo conectar con el servidor. Verifica tu conexión a internet e inténtalo nuevamente.");
+                throw new Error(
+                    "No se pudo conectar con el servidor. Verifica tu conexión a internet e inténtalo nuevamente."
+                );
             }
 
             if (res.status === 401) {
@@ -76,7 +78,9 @@ const Api = (() => {
                     credentials: "same-origin",
                 });
             } catch (e) {
-                throw new Error("No se pudo conectar con el servidor para subir el archivo. Verifica tu conexión a internet.");
+                throw new Error(
+                    "No se pudo conectar con el servidor para subir el archivo. Verifica tu conexión a internet."
+                );
             }
             if (!res.ok) {
                 let data = {};

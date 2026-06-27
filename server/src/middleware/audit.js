@@ -8,13 +8,11 @@ function auditar(accion, detalleFn) {
             try {
                 if (res.statusCode < 200 || res.statusCode >= 400) return;
                 const detalle = detalleFn ? detalleFn(req, res) : {};
-                pool
-                    .query(
-                        `INSERT INTO auditoria (usuario_id, colegio_id, accion, detalle, ip)
+                pool.query(
+                    `INSERT INTO auditoria (usuario_id, colegio_id, accion, detalle, ip)
                          VALUES ($1, $2, $3, $4, $5)`,
-                        [req.usuario?.id || null, getColegioEfectivo(req), accion, JSON.stringify(detalle), req.ip]
-                    )
-                    .catch((err) => logger.error({ err }, "No se pudo registrar auditoría"));
+                    [req.usuario?.id || null, getColegioEfectivo(req), accion, JSON.stringify(detalle), req.ip]
+                ).catch((err) => logger.error({ err }, "No se pudo registrar auditoría"));
             } catch (err) {
                 logger.error({ err }, "No se pudo registrar auditoría");
             }

@@ -11,12 +11,22 @@ const App = (() => {
         document.getElementById("loading-overlay").classList.toggle("hidden", !visible);
     }
 
+    // Escapa texto antes de interpolarlo en innerHTML. Todo dato que provenga del
+    // usuario (nombre de estudiante, descripciones, etc.) debe pasar por aquí para
+    // evitar XSS almacenado al renderizarlo en el listado/detalle de casos.
+    function escapeHtml(texto) {
+        return String(texto ?? "").replace(
+            /[&<>"']/g,
+            (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+        );
+    }
+
     function mostrarToast(mensaje, tipo = "info") {
         const contenedor = document.getElementById("toast-container");
         const colores = { success: "text-bg-success", danger: "text-bg-danger", info: "text-bg-primary" };
         const toast = document.createElement("div");
         toast.className = `toast align-items-center ${colores[tipo] || colores.info} border-0 show mb-2`;
-        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${mensaje}</div>
+        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${escapeHtml(mensaje)}</div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
         contenedor.appendChild(toast);
         setTimeout(() => toast.remove(), 5000);
@@ -109,5 +119,15 @@ const App = (() => {
         await Auth.verificarSesionExistente();
     });
 
-    return { estado, mostrarCargando, mostrarToast, confirmar, resolverConfirmar, toggleMenuMobile, switchView, inicializarTooltips };
+    return {
+        estado,
+        mostrarCargando,
+        mostrarToast,
+        confirmar,
+        resolverConfirmar,
+        toggleMenuMobile,
+        switchView,
+        inicializarTooltips,
+        escapeHtml,
+    };
 })();

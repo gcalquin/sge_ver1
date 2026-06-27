@@ -324,7 +324,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
                             <label class="form-label text-xs font-semibold text-slate-500" for="filter-estado">Filtrar por Estado</label>
-                            <select id="filter-estado" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200">
+                            <select id="filter-estado" onchange="Casos.filtrosCambiaron()" class="form-select form-select-sm border-slate-200">
                                 <option value="Todos">Todos los estados</option>
                                 <option value="Abierto">Abierto</option>
                                 <option value="En seguimiento">En seguimiento</option>
@@ -333,7 +333,7 @@
                         </div>
                         <div>
                             <label class="form-label text-xs font-semibold text-slate-500" for="filter-categoria">Categoría</label>
-                            <select id="filter-categoria" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200">
+                            <select id="filter-categoria" onchange="Casos.filtrosCambiaron()" class="form-select form-select-sm border-slate-200">
                                 <option value="Todos">Todas las categorías</option>
                                 <option value="Convivencia Escolar">Convivencia Escolar</option>
                                 <option value="Académico / Rendimiento">Académico / Rendimiento</option>
@@ -344,12 +344,12 @@
                         </div>
                         <div>
                             <label class="form-label text-xs font-semibold text-slate-500" for="filter-responsable">Responsable Principal</label>
-                            <select id="filter-responsable" onchange="Casos.renderTablaCasos()" class="form-select form-select-sm border-slate-200"></select>
+                            <select id="filter-responsable" onchange="Casos.filtrosCambiaron()" class="form-select form-select-sm border-slate-200"></select>
                         </div>
                         <div class="flex items-end space-x-2">
                             <div class="w-full">
                                 <label class="form-label text-xs font-semibold text-slate-500" for="filter-search">Buscar Estudiante</label>
-                                <input type="text" id="filter-search" oninput="Casos.renderTablaCasos()" placeholder="Nombre..." class="form-control form-control-sm border-slate-200">
+                                <input type="text" id="filter-search" oninput="Casos.filtrosCambiaron()" placeholder="Nombre..." class="form-control form-control-sm border-slate-200">
                             </div>
                         </div>
                     </div>
@@ -376,6 +376,17 @@
                             </thead>
                             <tbody id="tabla-casos-body"></tbody>
                         </table>
+                    </div>
+                    <div class="flex items-center justify-between px-4 py-2 border-top border-slate-100 text-xs text-slate-500">
+                        <span id="casos-paginacion-info">Mostrando 0 de 0 casos</span>
+                        <div class="space-x-1">
+                            <button type="button" id="btn-casos-pag-anterior" onclick="Casos.irPaginaAnterior()" class="btn btn-xs btn-outline-secondary" disabled>
+                                <i class="fa-solid fa-chevron-left"></i> Anterior
+                            </button>
+                            <button type="button" id="btn-casos-pag-siguiente" onclick="Casos.irPaginaSiguiente()" class="btn btn-xs btn-outline-secondary" disabled>
+                                Siguiente <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </main>

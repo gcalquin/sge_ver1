@@ -1,18 +1,50 @@
 const Casos = (() => {
+    const TAMANO_PAGINA = 50;
+    let paginaActual = 0;
+
+    function filtrosCambiaron() {
+        paginaActual = 0;
+        renderTablaCasos();
+    }
+
+    async function irPaginaAnterior() {
+        if (paginaActual === 0) return;
+        paginaActual -= 1;
+        await renderTablaCasos();
+    }
+
+    async function irPaginaSiguiente() {
+        paginaActual += 1;
+        await renderTablaCasos();
+    }
+
     async function renderTablaCasos() {
         const fEstado = document.getElementById("filter-estado").value;
         const fCat = document.getElementById("filter-categoria").value;
         const fResp = document.getElementById("filter-responsable").value;
         const fSearch = document.getElementById("filter-search").value;
 
-        const params = new URLSearchParams({ estado: fEstado, categoria: fCat, responsable: fResp, search: fSearch });
+        const params = new URLSearchParams({
+            estado: fEstado,
+            categoria: fCat,
+            responsable: fResp,
+            search: fSearch,
+            limit: TAMANO_PAGINA,
+            offset: paginaActual * TAMANO_PAGINA,
+        });
         const tbody = document.getElementById("tabla-casos-body");
         tbody.innerHTML = "";
 
-        const casos = await Api.apiFetch(`/casos?${params}`);
+        const { casos, total } = await Api.apiFetch(`/casos?${params}`);
+        renderPaginacion(total, casos.length);
 
         casos.forEach((c) => {
-            let badgeColor = c.estado === "Abierto" ? "bg-danger" : c.estado === "Cerrado" ? "bg-success" : "bg-amber-600 text-white";
+            let badgeColor =
+                c.estado === "Abierto"
+                    ? "bg-danger"
+                    : c.estado === "Cerrado"
+                      ? "bg-success"
+                      : "bg-amber-600 text-white";
             const alerta = c.alertaCritica
                 ? `<span class="badge bg-danger status-badge text-xs ms-1" data-bs-toggle="tooltip" title="Sin nueva entrada de bitácora hace ${c.diasInactivo} día(s), supera el umbral de alerta crítica."><i class="fa-solid fa-triangle-exclamation"></i> Crítico</span>`
                 : "";
@@ -22,11 +54,11 @@ const Casos = (() => {
                     : "";
             tbody.innerHTML += `
                 <tr>
-                    <td class="px-4 py-3"><div class="font-bold text-slate-800">${c.folio}</div><div class="text-xs text-slate-500">${c.estudiante} ${masEstudiantes}</div></td>
-                    <td class="px-4 py-3 text-xs">${c.categoria}</td>
-                    <td class="px-4 py-3 text-xs">${c.fechaApertura}</td>
+                    <td class="px-4 py-3"><div class="font-bold text-slate-800">${App.escapeHtml(c.folio)}</div><div class="text-xs text-slate-500">${App.escapeHtml(c.estudiante)} ${masEstudiantes}</div></td>
+                    <td class="px-4 py-3 text-xs">${App.escapeHtml(c.categoria)}</td>
+                    <td class="px-4 py-3 text-xs">${App.escapeHtml(c.fechaApertura)}</td>
                     <td class="px-4 py-3 text-xs font-semibold">${c.diasActivo} de Permanencia</td>
-                    <td class="px-4 py-3 text-xs">${c.responsablePrincipal}</td>
+                    <td class="px-4 py-3 text-xs">${App.escapeHtml(c.responsablePrincipal)}</td>
                     <td class="px-4 py-3"><span class="badge ${badgeColor} status-badge text-xs">${c.estado}</span>${alerta}</td>
                     <td class="px-4 py-3 text-end">
                         <button onclick="Casos.verDetalleCaso(${c.id})" class="btn btn-xs btn-primary bg-slate-800 border-0 text-xs"><i class="fa-solid fa-folder-open"></i></button>
@@ -35,6 +67,14 @@ const Casos = (() => {
             `;
         });
         App.inicializarTooltips();
+    }
+
+    function renderPaginacion(total, cantidadEnPagina) {
+        const desde = total === 0 ? 0 : paginaActual * TAMANO_PAGINA + 1;
+        const hasta = paginaActual * TAMANO_PAGINA + cantidadEnPagina;
+        document.getElementById("casos-paginacion-info").innerText = `Mostrando ${desde}-${hasta} de ${total} caso(s)`;
+        document.getElementById("btn-casos-pag-anterior").disabled = paginaActual === 0;
+        document.getElementById("btn-casos-pag-siguiente").disabled = hasta >= total;
     }
 
     function exportarPdfsZip() {
@@ -55,7 +95,9 @@ const Casos = (() => {
             return;
         }
         renderDetalleCasoUI(App.estado.casoActual);
-        bootstrap.Tab.getOrCreateInstance(document.querySelector('#tabs-detalle-caso button[data-bs-target="#tab-bitacora"]')).show();
+        bootstrap.Tab.getOrCreateInstance(
+            document.querySelector('#tabs-detalle-caso button[data-bs-target="#tab-bitacora"]')
+        ).show();
         App.switchView("detalle");
     }
 
@@ -74,19 +116,26 @@ const Casos = (() => {
         document.getElementById("print-header-colegio").innerText = caso.colegioNombre
             ? `${caso.colegioNombre}${caso.colegioRbd ? ` (RBD ${caso.colegioRbd})` : ""}`
             : "";
-        document.getElementById("print-header-fecha").innerText = `Documento generado el ${new Date().toLocaleString("es-CL")}`;
+        document.getElementById("print-header-fecha").innerText =
+            `Documento generado el ${new Date().toLocaleString("es-CL")}`;
 
         document.getElementById("det-pie-wrap").classList.toggle("hidden", !caso.tieneNee);
         document.getElementById("det-pie-diagnostico").innerText = caso.diagnosticoPie || "";
         document.getElementById("det-junaeb-wrap").classList.toggle("hidden", !caso.beneficiosJunaeb);
         document.getElementById("det-junaeb").innerText = caso.beneficiosJunaeb || "-";
 
-        document.getElementById("banner-denuncia-obligatoria").classList.toggle("hidden", !caso.denunciaObligatoriaPendiente);
+        document
+            .getElementById("banner-denuncia-obligatoria")
+            .classList.toggle("hidden", !caso.denunciaObligatoriaPendiente);
 
         const badge = document.getElementById("det-badge-estado");
         badge.className =
             "badge status-badge " +
-            (caso.estado === "Abierto" ? "bg-danger" : caso.estado === "Cerrado" ? "bg-success" : "bg-amber-600 text-white");
+            (caso.estado === "Abierto"
+                ? "bg-danger"
+                : caso.estado === "Cerrado"
+                  ? "bg-success"
+                  : "bg-amber-600 text-white");
         badge.innerText = caso.estado;
 
         const puedeEscribir = caso.estado !== "Cerrado" && App.estado.currentUser.rol !== "invitado";
@@ -121,7 +170,7 @@ const Casos = (() => {
         lista.innerHTML = adicionales
             .map(
                 (e) => `<span class="badge bg-slate-100 text-slate-700 status-badge text-xs">
-                    ${e.nombre}
+                    ${App.escapeHtml(e.nombre)}
                     ${puedeEscribir ? `<i class="fa-solid fa-xmark ms-1 no-print" style="cursor:pointer" onclick="Casos.eliminarEstudianteAdicionalDetalle(${e.id})" title="Quitar"></i>` : ""}
                 </span>`
             )
@@ -133,10 +182,13 @@ const Casos = (() => {
         const nombre = input.value.trim();
         if (!nombre) return;
         try {
-            App.estado.casoActual = await Api.apiFetch(`/casos/${App.estado.casoSeleccionadoId}/estudiantes-adicionales`, {
-                method: "POST",
-                body: JSON.stringify({ nombre }),
-            });
+            App.estado.casoActual = await Api.apiFetch(
+                `/casos/${App.estado.casoSeleccionadoId}/estudiantes-adicionales`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({ nombre }),
+                }
+            );
             input.value = "";
             renderDetalleCasoUI(App.estado.casoActual);
             App.mostrarToast("Estudiante agregado al caso.", "success");
@@ -147,9 +199,12 @@ const Casos = (() => {
 
     async function eliminarEstudianteAdicionalDetalle(estId) {
         try {
-            App.estado.casoActual = await Api.apiFetch(`/casos/${App.estado.casoSeleccionadoId}/estudiantes-adicionales/${estId}`, {
-                method: "DELETE",
-            });
+            App.estado.casoActual = await Api.apiFetch(
+                `/casos/${App.estado.casoSeleccionadoId}/estudiantes-adicionales/${estId}`,
+                {
+                    method: "DELETE",
+                }
+            );
             renderDetalleCasoUI(App.estado.casoActual);
         } catch (err) {
             App.mostrarToast(err.message, "danger");
@@ -171,7 +226,7 @@ const Casos = (() => {
                     <input type="checkbox" class="form-check-input mt-0.5" ${p.completado ? "checked" : ""} ${puedeEscribir ? "" : "disabled"}
                         onchange="Casos.actualizarPasoProtocolo(${caso.id}, ${p.id}, this.checked)">
                     <div>
-                        <span class="${p.completado ? "text-slate-400 line-through" : vencido ? "text-red-700 font-semibold" : "text-slate-700"}">${p.descripcion}</span>
+                        <span class="${p.completado ? "text-slate-400 line-through" : vencido ? "text-red-700 font-semibold" : "text-slate-700"}">${App.escapeHtml(p.descripcion)}</span>
                         <div class="text-xs text-slate-400">Plazo: ${p.fechaLimite || "-"} ${vencido ? "(VENCIDO)" : ""}</div>
                     </div>
                 </div>`;
@@ -181,7 +236,10 @@ const Casos = (() => {
 
     async function actualizarPasoProtocolo(casoId, pasoId, completado) {
         try {
-            await Api.apiFetch(`/casos/${casoId}/pasos-protocolo/${pasoId}`, { method: "PATCH", body: JSON.stringify({ completado }) });
+            await Api.apiFetch(`/casos/${casoId}/pasos-protocolo/${pasoId}`, {
+                method: "PATCH",
+                body: JSON.stringify({ completado }),
+            });
             App.estado.casoActual = await Api.apiFetch(`/casos/${casoId}`);
             renderDetalleCasoUI(App.estado.casoActual);
         } catch (err) {
@@ -199,9 +257,9 @@ const Casos = (() => {
                               ? `<button type="button" onclick="Casos.toggleAdjuntosDerivacion(${caso.id}, ${d.id})" class="text-xs text-blue-700 underline no-print">📎 ${d.adjuntos} medio(s) de verificación</button>`
                               : '<span class="text-xs text-slate-400 no-print">Sin medios de verificación</span>';
                       return `<div class="border-b border-slate-100 py-1.5">
-                          <div class="flex justify-between"><b>${d.institucion}</b><span class="badge bg-secondary status-badge text-xs">${d.estado}</span></div>
-                          <div class="text-slate-500">${d.tipo} — ${d.fechaDerivacion}${d.folioExterno ? ` — Folio: ${d.folioExterno}` : ""}</div>
-                          ${d.notas ? `<div class="text-slate-400 italic">${d.notas}</div>` : ""}
+                          <div class="flex justify-between"><b>${App.escapeHtml(d.institucion)}</b><span class="badge bg-secondary status-badge text-xs">${App.escapeHtml(d.estado)}</span></div>
+                          <div class="text-slate-500">${App.escapeHtml(d.tipo)} — ${App.escapeHtml(d.fechaDerivacion)}${d.folioExterno ? ` — Folio: ${App.escapeHtml(d.folioExterno)}` : ""}</div>
+                          ${d.notas ? `<div class="text-slate-400 italic">${App.escapeHtml(d.notas)}</div>` : ""}
                           <div class="flex items-center justify-between mt-1 no-print">
                               ${adjuntosBtn}
                               <label class="text-xs text-slate-500 hover:underline cursor-pointer">
@@ -226,7 +284,10 @@ const Casos = (() => {
             notas: document.getElementById("der-notas").value || null,
         };
         try {
-            await Api.apiFetch(`/casos/${App.estado.casoSeleccionadoId}/derivaciones`, { method: "POST", body: JSON.stringify(payload) });
+            await Api.apiFetch(`/casos/${App.estado.casoSeleccionadoId}/derivaciones`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
             document.getElementById("form-derivacion").reset();
             App.estado.casoActual = await Api.apiFetch(`/casos/${App.estado.casoSeleccionadoId}`);
             renderDetalleCasoUI(App.estado.casoActual);
@@ -246,7 +307,7 @@ const Casos = (() => {
         contenedor.innerHTML = adjuntos
             .map(
                 (a) =>
-                    `<a href="${Api.API_BASE}/casos/${casoId}/adjuntos/${a.id}" target="_blank" class="d-block text-blue-700"><i class="fa-solid fa-paperclip me-1"></i>${a.nombre}</a>`
+                    `<a href="${Api.API_BASE}/casos/${casoId}/adjuntos/${a.id}" target="_blank" class="d-block text-blue-700"><i class="fa-solid fa-paperclip me-1"></i>${App.escapeHtml(a.nombre)}</a>`
             )
             .join("");
         contenedor.classList.remove("hidden");
@@ -292,7 +353,7 @@ const Casos = (() => {
         document.getElementById("chips-estudiantes-adicionales").innerHTML = chipsEstudiantesAdicionales
             .map(
                 (nombre, i) => `<span class="badge bg-slate-100 text-slate-700 status-badge text-xs">
-                    ${nombre}
+                    ${App.escapeHtml(nombre)}
                     <i class="fa-solid fa-xmark ms-1" style="cursor:pointer" onclick="Casos.quitarChipEstudianteAdicional(${i})" title="Quitar"></i>
                 </span>`
             )
@@ -301,8 +362,13 @@ const Casos = (() => {
 
     function agregarChipEstudianteAdicional() {
         const input = document.getElementById("in-estudiante-adicional");
-        const nombre = input.value.trim();
+        const nombre = input.value.trim().replace(/\s+/g, " ");
         if (!nombre) return;
+        if (chipsEstudiantesAdicionales.some((n) => n.toLowerCase() === nombre.toLowerCase())) {
+            App.mostrarToast("Ese estudiante ya está en la lista.", "info");
+            input.value = "";
+            return;
+        }
         chipsEstudiantesAdicionales.push(nombre);
         input.value = "";
         renderChipsEstudiantesAdicionales();
@@ -373,6 +439,9 @@ const Casos = (() => {
 
     return {
         renderTablaCasos,
+        filtrosCambiaron,
+        irPaginaAnterior,
+        irPaginaSiguiente,
         exportarPdfsZip,
         verDetalleCaso,
         renderDetalleCasoUI,

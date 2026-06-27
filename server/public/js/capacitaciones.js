@@ -32,8 +32,8 @@ const Capacitaciones = (() => {
                       const colorClase = vencida ? "text-red-600" : porVencer ? "text-amber-600" : "text-slate-600";
                       return `<div class="flex justify-between items-center border-b border-slate-100 py-1">
                           <div>
-                              <b>${c.nombre}</b>${c.institucion ? ` — ${c.institucion}` : ""}
-                              <div class="${colorClase}">Obtenida: ${c.fechaObtencion}${c.fechaVencimiento ? ` — Vence: ${c.fechaVencimiento}${vencida ? " (VENCIDA)" : porVencer ? " (por vencer)" : ""}` : ""}</div>
+                              <b>${App.escapeHtml(c.nombre)}</b>${c.institucion ? ` — ${App.escapeHtml(c.institucion)}` : ""}
+                              <div class="${colorClase}">Obtenida: ${App.escapeHtml(c.fechaObtencion)}${c.fechaVencimiento ? ` — Vence: ${App.escapeHtml(c.fechaVencimiento)}${vencida ? " (VENCIDA)" : porVencer ? " (por vencer)" : ""}` : ""}</div>
                           </div>
                           ${puedeGestionar ? `<button onclick="Capacitaciones.eliminar(${usuarioId}, ${c.id})" class="text-red-600 hover:underline shrink-0 ms-2">Quitar</button>` : ""}
                       </div>`;
@@ -52,7 +52,10 @@ const Capacitaciones = (() => {
             fechaVencimiento: document.getElementById("cap-fecha-vencimiento").value || null,
         };
         try {
-            await Api.apiFetch(`/equipo/${usuarioId}/capacitaciones`, { method: "POST", body: JSON.stringify(payload) });
+            await Api.apiFetch(`/equipo/${usuarioId}/capacitaciones`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
             document.getElementById("form-capacitacion").reset();
             await renderLista(usuarioId);
             App.mostrarToast("Capacitación registrada.", "success");

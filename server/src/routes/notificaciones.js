@@ -5,6 +5,12 @@ const controller = require("../controllers/notificaciones");
 
 const router = express.Router();
 
-router.post("/alertas", requireAuth, requireColegioContexto, auditar("notificaciones.alertas"), controller.enviarAlertas);
+router.post(
+    "/alertas",
+    requireAuth,
+    requireColegioContexto,
+    auditar("notificaciones.alertas"),
+    controller.enviarAlertas
+);
 
 module.exports = router;
