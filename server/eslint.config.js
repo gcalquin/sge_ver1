@@ -18,6 +18,10 @@ const FRONTEND_MODULE_GLOBALS = {
     Equipo: "readonly",
     Config: "readonly",
     Offline: "readonly",
+    Estudiantes: "readonly",
+    ComiteConvivencia: "readonly",
+    DashboardSostenedor: "readonly",
+    Sumarios: "readonly",
 };
 
 const BROWSER_GLOBALS = {
@@ -28,6 +32,7 @@ const BROWSER_GLOBALS = {
     URLSearchParams: "readonly",
     FormData: "readonly",
     setTimeout: "readonly",
+    clearTimeout: "readonly",
     bootstrap: "readonly",
     Chart: "readonly",
 };

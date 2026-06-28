@@ -10,6 +10,7 @@ const router = express.Router();
 router.use(requireAuth, requireRol("superadmin"));
 
 router.get("/", controller.listar);
+router.get("/:id/dashboard", controller.dashboard);
 router.post("/", validar(crearSostenedorSchema), auditar("sostenedores.crear"), controller.crear);
 router.patch("/:id", validar(actualizarSostenedorSchema), auditar("sostenedores.actualizar"), controller.actualizar);
 router.delete("/:id", auditar("sostenedores.eliminar"), controller.eliminar);

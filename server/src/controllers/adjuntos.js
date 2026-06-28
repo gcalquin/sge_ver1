@@ -191,6 +191,57 @@ const descargarDeActividad = asyncHandler(async (req, res) => {
     res.download(path.join(uploadDir, adjunto.nombre_disco), adjunto.nombre_orig);
 });
 
+// ===================== medios de verificación de un acta del Comité de Convivencia =====================
+// Mismo patrón que las actividades: el acta no cuelga de un caso, se valida y
+// descarga directamente contra el colegio en sesión.
+
+const subirParaActaComite = asyncHandler(async (req, res) => {
+    if (!req.files || req.files.length === 0) return res.status(400).json({ error: "No se recibió ningún archivo." });
+
+    const { rows } = await pool.query("SELECT id FROM actas_comite_convivencia WHERE id = $1 AND colegio_id = $2", [
+        req.params.actaId,
+        req.colegioId,
+    ]);
+    if (rows.length === 0) return res.status(404).json({ error: "Acta no encontrada." });
+
+    const insertados = [];
+    for (const file of req.files) {
+        const { rows: ins } = await pool.query(
+            `INSERT INTO adjuntos (acta_comite_id, nombre_orig, nombre_disco, mime, tamano, subido_por)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING id, nombre_orig AS nombre, mime, tamano`,
+            [req.params.actaId, file.originalname, file.filename, file.mimetype, file.size, req.usuario.id]
+        );
+        insertados.push(ins[0]);
+    }
+    res.status(201).json(insertados);
+});
+
+const listarPorActaComite = asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+        `SELECT a.id, a.nombre_orig AS nombre, a.mime, a.tamano, a.created_at
+         FROM adjuntos a
+         JOIN actas_comite_convivencia ac ON ac.id = a.acta_comite_id
+         WHERE a.acta_comite_id = $1 AND ac.colegio_id = $2
+         ORDER BY a.id`,
+        [req.params.actaId, req.colegioId]
+    );
+    res.json(rows);
+});
+
+const descargarDeActaComite = asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+        `SELECT a.* FROM adjuntos a
+         JOIN actas_comite_convivencia ac ON ac.id = a.acta_comite_id
+         WHERE a.id = $1 AND a.acta_comite_id = $2 AND ac.colegio_id = $3`,
+        [req.params.adjId, req.params.actaId, req.colegioId]
+    );
+    const adjunto = rows[0];
+    if (!adjunto) return res.status(404).json({ error: "Adjunto no encontrado." });
+
+    res.download(path.join(uploadDir, adjunto.nombre_disco), adjunto.nombre_orig);
+});
+
 module.exports = {
     subir,
     listarPorBitacora,
@@ -202,4 +253,7 @@ module.exports = {
     subirParaActividad,
     listarPorActividad,
     descargarDeActividad,
+    subirParaActaComite,
+    listarPorActaComite,
+    descargarDeActaComite,
 };

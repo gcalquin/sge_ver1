@@ -1,4 +1,5 @@
 const express = require("express");
+const { pool } = require("../config/db");
 const { validar } = require("../middleware/validate");
 const { requireAuth, requireEscritura, requireRol, requireColegioContexto } = require("../middleware/auth");
 const { auditar } = require("../middleware/audit");
@@ -24,6 +25,25 @@ const mediacionesController = require("../controllers/mediaciones");
 const router = express.Router();
 
 router.use(requireAuth, requireColegioContexto);
+
+// Cierra a nivel de ruta (no solo en getCasoDetalle) la confidencialidad de los
+// sumarios a funcionarios (Ley Karin): TODA ruta de esta familia que incluya
+// ":id" (bitácora, adjuntos, derivaciones, mediaciones, pasos de protocolo...)
+// pasa primero por aquí. Si el caso es un sumario y quien pide no es
+// admin/superadmin, se trata como inexistente — así no hay sub-recurso que se
+// pueda usar como puerta trasera para leer o escribir un sumario por la ruta
+// general de casos.
+router.param("id", async (req, res, next, id) => {
+    const { rows } = await pool.query("SELECT ambito FROM casos WHERE id = $1 AND colegio_id = $2", [
+        id,
+        req.colegioId,
+    ]);
+    const esAdmin = req.usuario.rol === "admin" || req.usuario.rol === "superadmin";
+    if (rows[0]?.ambito === "Funcionario" && !esAdmin) {
+        return res.status(404).json({ error: "Caso no encontrado." });
+    }
+    next();
+});
 
 const actualizarCasoConCierreSchema = actualizarCasoSchema.extend({
     cierre: cierreSchema.optional(),
@@ -103,6 +123,7 @@ router.post(
     adjuntosController.subirParaDerivacion
 );
 router.get("/:id/derivaciones/:derivacionId/adjuntos", adjuntosController.listarPorDerivacion);
+router.get("/:id/derivaciones/:derivacionId/pdf", derivacionesController.pdf);
 
 router.get("/:id/mediaciones", mediacionesController.listar);
 router.post(

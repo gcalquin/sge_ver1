@@ -409,6 +409,7 @@ const Convivencia = (() => {
         await renderActividades();
         await renderMedidas();
         await renderProtocolos();
+        await ComiteConvivencia.renderVista();
 
         const gestion = puedeGestionar();
         const esInvitado = App.estado.currentUser.rol === "invitado";
@@ -420,6 +421,7 @@ const Convivencia = (() => {
             form.classList.toggle("pointer-events-none", !gestion);
         });
         document.getElementById("btn-toggle-form-actividad").classList.toggle("hidden", esInvitado);
+        document.getElementById("btn-toggle-form-acta-comite").classList.toggle("hidden", esInvitado);
 
         App.inicializarTooltips();
     }

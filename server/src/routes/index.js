@@ -13,6 +13,8 @@ const protocolosRoutes = require("./protocolos");
 const reportesRoutes = require("./reportes");
 const cursosProfesorJefeRoutes = require("./cursosProfesorJefe");
 const convivenciaRoutes = require("./convivencia");
+const estudiantesRoutes = require("./estudiantes");
+const sumariosRoutes = require("./sumarios");
 
 const router = express.Router();
 
@@ -40,5 +42,7 @@ router.use("/protocolos", protocolosRoutes);
 router.use("/reportes", reportesRoutes);
 router.use("/cursos-profesor-jefe", cursosProfesorJefeRoutes);
 router.use("/convivencia", convivenciaRoutes);
+router.use("/estudiantes", estudiantesRoutes);
+router.use("/sumarios", sumariosRoutes);
 
 module.exports = router;

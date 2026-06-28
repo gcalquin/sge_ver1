@@ -34,6 +34,7 @@ const Colegios = (() => {
                           `<div class="flex justify-between items-center bg-slate-50 px-2 py-1 rounded">
                               <span>${App.escapeHtml(s.nombre)} <span class="text-slate-400">(${s.total_colegios} colegio/s)</span></span>
                               <span class="space-x-2">
+                                  <button onclick="DashboardSostenedor.abrir(${s.id})" class="text-emerald-700 hover:underline">Ver Dashboard</button>
                                   <button onclick="Colegios.abrirEditarSostenedor(${s.id})" class="text-blue-700 hover:underline">Editar</button>
                                   <button onclick="Colegios.eliminarSostenedor(${s.id})" class="text-red-600 hover:underline">Eliminar</button>
                               </span>

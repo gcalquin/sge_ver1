@@ -7,17 +7,11 @@ const { enviarCorreo } = require("../config/mailer");
 const { obtenerMediacionesDeCaso } = require("./mediaciones");
 const { listarProximasAVencer } = require("./capacitaciones");
 const { obtenerPasosProtocoloEfectivo } = require("./convivencia");
+const { tsQueryBusqueda } = require("../utils/search");
+const { seccionTitulo, lineaDato, encabezadoInstitucional, piePaginas } = require("../utils/pdfHelpers");
+const { CATEGORIAS_CON_DENUNCIA_OBLIGATORIA } = require("../validation/constants");
 
 const TIPO_BITACORA = { entrevista: "Entrevista", seguimiento: "Seguimiento", medida: "Medida" };
-
-// Construye un fragmento SQL que convierte un parámetro de búsqueda libre (que
-// puede tener varias palabras, ej. un nombre completo) en un tsquery válido con
-// coincidencia por prefijo en cada palabra ("ana maria" -> "ana:* & maria:*").
-// to_tsquery() no acepta texto plano con espacios, por eso no se le puede pasar
-// el parámetro tal cual + ':*' cuando tiene más de una palabra.
-function tsQueryBusqueda(param) {
-    return `regexp_replace(trim(inmutable_unaccent(${param})), '\\s+', ':* & ', 'g') || ':*'`;
-}
 
 // Recorta espacios sobrantes (extremos y dobles internos) para que "Juan  Pérez "
 // y "Juan Pérez" no queden como dos entradas distintas en caso_estudiantes_adicionales.
@@ -54,6 +48,13 @@ async function getCasoDetalle(colegioId, id, usuario) {
     const caso = casoRows[0];
     if (!caso) return null;
 
+    // Los sumarios a funcionarios (Ley Karin) son confidenciales: cualquier
+    // intento de verlos por la ruta general de casos (en vez de /sumarios) se
+    // trata como "no encontrado" si el usuario no es admin/superadmin, para que
+    // no se puedan leer adivinando el id.
+    const esAdmin = usuario && (usuario.rol === "admin" || usuario.rol === "superadmin");
+    if (caso.ambito === "Funcionario" && !esAdmin) return null;
+
     // Estas consultas son independientes entre sí (solo dependen de `id`/`colegioId`,
     // no del resultado de las otras), así que se disparan en paralelo en vez de
     // pagar la latencia de red de cada una en serie.
@@ -89,7 +90,7 @@ async function getCasoDetalle(colegioId, id, usuario) {
         ),
         pool.query(
             `SELECT d.id, d.institucion, d.tipo, d.fecha_derivacion AS "fechaDerivacion", d.folio_externo AS "folioExterno",
-                    d.estado, d.notas, (SELECT count(*) FROM adjuntos ad WHERE ad.derivacion_id = d.id) AS adjuntos
+                    d.estado, d.notas, d.confidencial, (SELECT count(*) FROM adjuntos ad WHERE ad.derivacion_id = d.id) AS adjuntos
              FROM derivaciones d WHERE d.caso_id = $1 ORDER BY d.id DESC`,
             [id]
         ),
@@ -106,11 +107,20 @@ async function getCasoDetalle(colegioId, id, usuario) {
         ? { rows: overrideRows }
         : await pool.query("SELECT nombre, normativa FROM protocolos WHERE categoria = $1", [caso.categoria]);
 
-    const puedeVerPie =
+    // Mismo guard que ya existía solo para diagnostico_pie, generalizado: admin,
+    // superadmin y Psicólogo PIE pueden ver información confidencial de salud
+    // (diagnóstico PIE y derivaciones de salud mental marcadas como confidenciales).
+    const puedeVerConfidencial =
         usuario &&
         (usuario.rol === "admin" || usuario.rol === "superadmin" || usuario.especialidad === "Psicólogo PIE");
     const denunciaObligatoriaPendiente =
-        caso.categoria === "Vulneración de Derechos" && !derivaciones.some((d) => d.tipo === "Denuncia Obligatoria");
+        CATEGORIAS_CON_DENUNCIA_OBLIGATORIA.includes(caso.categoria) &&
+        !derivaciones.some((d) => d.tipo === "Denuncia Obligatoria");
+    const derivacionesVisibles = derivaciones.map((d) =>
+        d.confidencial && !puedeVerConfidencial
+            ? { ...d, notas: null, folioExterno: null, oculto: true }
+            : { ...d, oculto: false }
+    );
 
     return {
         id: caso.id,
@@ -130,17 +140,19 @@ async function getCasoDetalle(colegioId, id, usuario) {
         tieneNee: caso.tiene_nee,
         diagnosticoPie: !caso.diagnostico_pie
             ? null
-            : puedeVerPie
+            : puedeVerConfidencial
               ? caso.diagnostico_pie
               : "(Información PIE confidencial — acceso restringido)",
         beneficiosJunaeb: caso.beneficios_junaeb,
         denunciaObligatoriaPendiente,
+        ambito: caso.ambito,
+        estudianteId: caso.estudiante_id,
         colegioNombre: colegioRows[0]?.nombre || null,
         colegioRbd: colegioRows[0]?.rbd || null,
         protocoloNombre: protocoloRows[0]?.nombre || null,
         protocoloNormativa: protocoloRows[0]?.normativa || null,
         pasosProtocolo,
-        derivaciones,
+        derivaciones: derivacionesVisibles,
         mediaciones,
         bitacora,
     };
@@ -156,7 +168,9 @@ const listar = asyncHandler(async (req, res) => {
         offset = 0,
     } = req.query;
 
-    const condiciones = ["vc.colegio_id = $1"];
+    // La ruta general de casos jamás lista sumarios a funcionarios (Ley Karin):
+    // esos solo se listan vía /sumarios, con su propio guard de admin/superadmin.
+    const condiciones = ["vc.colegio_id = $1", "vc.ambito = 'Estudiantil'"];
     const valores = [req.colegioId];
 
     if (estado !== "Todos") {
@@ -381,9 +395,14 @@ const obtener = asyncHandler(async (req, res) => {
     res.json(caso);
 });
 
-const crear = asyncHandler(async (req, res) => {
+// Núcleo de creación de un caso, compartido entre la ruta pública /casos
+// (siempre ambito='Estudiantil') y controllers/sumarios.js (siempre
+// ambito='Funcionario', categoria fija). Nadie más decide el ambito de un caso
+// que el código del servidor: nunca viene de req.body.
+async function crearCasoInterno({ colegioId, usuario, ambito, datos }) {
     const {
         estudiante,
+        estudianteId,
         estudiantesAdicionales = [],
         fechaApertura,
         categoria,
@@ -393,28 +412,23 @@ const crear = asyncHandler(async (req, res) => {
         tieneNee,
         diagnosticoPie,
         beneficiosJunaeb,
-    } = req.body;
+    } = datos;
 
-    const { rows: respRows } = await pool.query(
-        "SELECT id FROM usuarios WHERE id = $1 AND colegio_id = $2 AND rol IN ('admin','funcionario') AND activo = TRUE",
-        [responsableId, req.colegioId]
-    );
-    if (respRows.length === 0) return res.status(400).json({ error: "Responsable inválido." });
-
-    const pasos = await obtenerPasosProtocoloEfectivo(req.colegioId, categoria);
+    const pasos = await obtenerPasosProtocoloEfectivo(colegioId, categoria);
 
     const client = await pool.connect();
     let casoId;
     try {
         await client.query("BEGIN");
         const { rows: nuevoCaso } = await client.query(
-            `INSERT INTO casos (colegio_id, estudiante, categoria, descripcion, estado, fecha_apertura, responsable_id,
-                                 curso, tiene_nee, diagnostico_pie, beneficios_junaeb)
-             VALUES ($1, $2, $3, $4, 'Abierto', $5, $6, $7, $8, $9, $10)
+            `INSERT INTO casos (colegio_id, estudiante, estudiante_id, categoria, descripcion, estado, fecha_apertura,
+                                 responsable_id, curso, tiene_nee, diagnostico_pie, beneficios_junaeb, ambito)
+             VALUES ($1, $2, $3, $4, $5, 'Abierto', $6, $7, $8, $9, $10, $11, $12)
              RETURNING id`,
             [
-                req.colegioId,
+                colegioId,
                 estudiante,
+                estudianteId || null,
                 categoria,
                 descripcion,
                 fechaApertura,
@@ -423,6 +437,7 @@ const crear = asyncHandler(async (req, res) => {
                 Boolean(tieneNee),
                 diagnosticoPie || null,
                 beneficiosJunaeb || null,
+                ambito,
             ]
         );
         casoId = nuevoCaso[0].id;
@@ -439,13 +454,13 @@ const crear = asyncHandler(async (req, res) => {
         const hash = calcularHash({
             contenido: contenidoApertura,
             fecha: fechaApertura,
-            operadorId: req.usuario.id,
+            operadorId: usuario.id,
             hashAnterior: null,
         });
         await client.query(
             `INSERT INTO bitacora (caso_id, tipo, fecha_ejecucion, operador_id, contenido, hash, hash_anterior)
              VALUES ($1, 'Apertura', $2, $3, $4, $5, NULL)`,
-            [casoId, fechaApertura, req.usuario.id, contenidoApertura, hash]
+            [casoId, fechaApertura, usuario.id, contenidoApertura, hash]
         );
 
         for (const paso of pasos) {
@@ -471,7 +486,7 @@ const crear = asyncHandler(async (req, res) => {
             `SELECT u.nombre, u.email FROM cursos_profesor_jefe cpj
              JOIN usuarios u ON u.id = cpj.profesor_jefe_id
              WHERE cpj.colegio_id = $1 AND cpj.curso = $2`,
-            [req.colegioId, curso]
+            [colegioId, curso]
         );
         if (pj[0]) {
             await enviarCorreo({
@@ -481,6 +496,23 @@ const crear = asyncHandler(async (req, res) => {
             });
         }
     }
+
+    return casoId;
+}
+
+const crear = asyncHandler(async (req, res) => {
+    const { rows: respRows } = await pool.query(
+        "SELECT id FROM usuarios WHERE id = $1 AND colegio_id = $2 AND rol IN ('admin','funcionario') AND activo = TRUE",
+        [req.body.responsableId, req.colegioId]
+    );
+    if (respRows.length === 0) return res.status(400).json({ error: "Responsable inválido." });
+
+    const casoId = await crearCasoInterno({
+        colegioId: req.colegioId,
+        usuario: req.usuario,
+        ambito: "Estudiantil",
+        datos: req.body,
+    });
 
     res.status(201).json(await getCasoDetalle(req.colegioId, casoId, req.usuario));
 });
@@ -535,6 +567,7 @@ const actualizar = asyncHandler(async (req, res) => {
     if (claves.length > 0) {
         const mapaColumnas = {
             estudiante: "estudiante",
+            estudianteId: "estudiante_id",
             categoria: "categoria",
             descripcion: "descripcion",
             responsableId: "responsable_id",
@@ -570,9 +603,10 @@ const agregarEstudianteAdicional = asyncHandler(async (req, res) => {
         return res.status(409).json({ error: "Ese estudiante ya está vinculado a este caso." });
     }
 
-    await pool.query("INSERT INTO caso_estudiantes_adicionales (caso_id, nombre) VALUES ($1, $2)", [
+    await pool.query("INSERT INTO caso_estudiantes_adicionales (caso_id, nombre, estudiante_id) VALUES ($1, $2, $3)", [
         req.params.id,
         nombre,
+        req.body.estudianteId || null,
     ]);
     res.status(201).json(await getCasoDetalle(req.colegioId, req.params.id, req.usuario));
 });
@@ -637,46 +671,20 @@ const bitacora = asyncHandler(async (req, res) => {
     res.json(await getCasoDetalle(req.colegioId, req.params.id, req.usuario));
 });
 
-function seccionTitulo(doc, texto) {
-    doc.moveDown(0.8);
-    doc.fontSize(13).fillColor("#1e3a8a").text(texto, { underline: true });
-    doc.fillColor("#000000").fontSize(10);
-    doc.moveDown(0.3);
-}
-
-function lineaDato(doc, etiqueta, valor) {
-    doc.fontSize(10).fillColor("#475569").text(etiqueta, { continued: true }).fillColor("#000000").text(` ${valor}`);
-}
-
 function dibujarExpedientePdf(doc, caso) {
     const hoy = new Date().toISOString().slice(0, 10);
+    const esFuncionario = caso.ambito === "Funcionario";
 
-    // Encabezado institucional
-    doc.fontSize(14)
-        .fillColor("#1e3a8a")
-        .text(caso.colegioNombre || "Establecimiento Educacional", { align: "center" });
-    if (caso.colegioRbd) {
-        doc.fontSize(9).fillColor("#64748b").text(`RBD: ${caso.colegioRbd}`, { align: "center" });
-    }
-    doc.moveDown(0.5);
-    doc.fontSize(9)
-        .fillColor("#94a3b8")
-        .text(`Documento generado el ${new Date().toLocaleString("es-CL")}`, { align: "center" });
-    doc.moveDown(0.8);
-    doc.fillColor("#000000");
-    doc.moveTo(50, doc.y)
-        .lineTo(doc.page.width - 50, doc.y)
-        .strokeColor("#cbd5e1")
-        .stroke();
-    doc.moveDown(0.8);
-
-    doc.fontSize(18).fillColor("#0f172a").text(`Expediente ${caso.folio}`, { underline: true });
-    doc.fontSize(11).fillColor("#475569").text(caso.categoria);
-    doc.fillColor("#000000");
+    encabezadoInstitucional(doc, {
+        colegioNombre: caso.colegioNombre,
+        colegioRbd: caso.colegioRbd,
+        titulo: `${esFuncionario ? "Sumario Interno" : "Expediente"} ${caso.folio}`,
+        subtitulo: caso.categoria,
+    });
 
     // Datos generales
     seccionTitulo(doc, "Datos Generales del Caso");
-    lineaDato(doc, "Estudiante Principal:", caso.estudiante);
+    lineaDato(doc, esFuncionario ? "Funcionario Involucrado:" : "Estudiante Principal:", caso.estudiante);
     if (caso.estudiantesAdicionales && caso.estudiantesAdicionales.length) {
         lineaDato(doc, "Otros estudiantes involucrados:", caso.estudiantesAdicionales.map((e) => e.nombre).join(", "));
     }
@@ -702,7 +710,7 @@ function dibujarExpedientePdf(doc, caso) {
         doc.fillColor("#b91c1c")
             .fontSize(10)
             .text(
-                "DENUNCIA OBLIGATORIA PENDIENTE: este caso de Vulneración de Derechos aún no registra una denuncia a Carabineros, PDI, Fiscalía o Tribunal de Familia, conforme al Art. 175 letra e) del Código Procesal Penal."
+                `DENUNCIA OBLIGATORIA PENDIENTE: este caso de "${caso.categoria}" aún no registra una denuncia a Carabineros, PDI, Fiscalía o Tribunal de Familia, conforme al Art. 175 letra e) del Código Procesal Penal.`
             );
         doc.fillColor("#000000");
     }
@@ -743,7 +751,8 @@ function dibujarExpedientePdf(doc, caso) {
             doc.fontSize(9)
                 .fillColor("#475569")
                 .text(`Fecha: ${d.fechaDerivacion}${d.folioExterno ? ` — Folio externo: ${d.folioExterno}` : ""}`);
-            if (d.notas) doc.text(`Notas: ${d.notas}`);
+            if (d.oculto) doc.text("Notas: (información confidencial — acceso restringido)");
+            else if (d.notas) doc.text(`Notas: ${d.notas}`);
             if (Number(d.adjuntos) > 0) doc.text(`Medios de verificación adjuntos: ${d.adjuntos}`);
             doc.fillColor("#000000");
             doc.moveDown(0.2);
@@ -797,23 +806,10 @@ function dibujarExpedientePdf(doc, caso) {
         });
     }
 
-    seccionTitulo(doc, "Cierre del Documento");
-    doc.fontSize(8)
-        .fillColor("#94a3b8")
-        .text(
-            "Este documento es un respaldo oficial generado automáticamente por el Sistema de Gestión de Casos Estudiantiles (SGE) y refleja el estado del expediente al momento de su generación."
-        );
-
-    const totalPaginas = doc.bufferedPageRange().count;
-    for (let i = 0; i < totalPaginas; i++) {
-        doc.switchToPage(i);
-        doc.fontSize(8)
-            .fillColor("#94a3b8")
-            .text(`Página ${i + 1} de ${totalPaginas}`, 50, doc.page.height - 40, {
-                width: doc.page.width - 100,
-                align: "center",
-            });
-    }
+    piePaginas(
+        doc,
+        "Este documento es un respaldo oficial generado automáticamente por el Sistema de Gestión de Casos Estudiantiles (SGE) y refleja el estado del expediente al momento de su generación."
+    );
 }
 
 const pdf = asyncHandler(async (req, res) => {
@@ -983,6 +979,7 @@ module.exports = {
     dashboard,
     obtener,
     crear,
+    crearCasoInterno,
     actualizar,
     agregarEstudianteAdicional,
     eliminarEstudianteAdicional,

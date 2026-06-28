@@ -1,6 +1,7 @@
 const PDFDocument = require("pdfkit");
 const { pool } = require("../config/db");
 const { asyncHandler } = require("../utils/asyncHandler");
+const { CATEGORIA_SUMARIO } = require("../validation/constants");
 
 // ===================== actividades de convivencia escolar =====================
 
@@ -192,13 +193,17 @@ const pdfActividad = asyncHandler(async (req, res) => {
 // ===================== protocolos personalizados por colegio =====================
 
 const listarProtocolos = asyncHandler(async (req, res) => {
+    // El protocolo de sumarios (Ley Karin) es confidencial e interno: no se
+    // ofrece para personalización en el panel general de Convivencia, que
+    // pueden ver funcionario/admin sin restricción especial.
     const { rows } = await pool.query(
         `SELECT p.categoria, p.nombre AS "nombreGlobal", p.normativa AS "normativaGlobal", p.pasos AS "pasosGlobal",
                 pc.id AS "overrideId", pc.nombre AS "nombreColegio", pc.normativa AS "normativaColegio", pc.pasos AS "pasosColegio"
          FROM protocolos p
          LEFT JOIN protocolos_colegio pc ON pc.categoria = p.categoria AND pc.colegio_id = $1
+         WHERE p.categoria != $2
          ORDER BY p.categoria`,
-        [req.colegioId]
+        [req.colegioId, CATEGORIA_SUMARIO]
     );
 
     res.json(

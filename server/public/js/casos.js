@@ -186,7 +186,7 @@ const Casos = (() => {
                 `/casos/${App.estado.casoSeleccionadoId}/estudiantes-adicionales`,
                 {
                     method: "POST",
-                    body: JSON.stringify({ nombre }),
+                    body: JSON.stringify({ nombre, estudianteId: Estudiantes.idPorNombre(nombre) }),
                 }
             );
             input.value = "";
@@ -256,16 +256,22 @@ const Casos = (() => {
                           Number(d.adjuntos) > 0
                               ? `<button type="button" onclick="Casos.toggleAdjuntosDerivacion(${caso.id}, ${d.id})" class="text-xs text-blue-700 underline no-print">📎 ${d.adjuntos} medio(s) de verificación</button>`
                               : '<span class="text-xs text-slate-400 no-print">Sin medios de verificación</span>';
+                      const lockBadge = d.confidencial
+                          ? '<span class="badge bg-amber-100 text-amber-800 status-badge text-xs ms-1"><i class="fa-solid fa-lock"></i> Confidencial</span>'
+                          : "";
                       return `<div class="border-b border-slate-100 py-1.5">
-                          <div class="flex justify-between"><b>${App.escapeHtml(d.institucion)}</b><span class="badge bg-secondary status-badge text-xs">${App.escapeHtml(d.estado)}</span></div>
+                          <div class="flex justify-between"><span><b>${App.escapeHtml(d.institucion)}</b>${lockBadge}</span><span class="badge bg-secondary status-badge text-xs">${App.escapeHtml(d.estado)}</span></div>
                           <div class="text-slate-500">${App.escapeHtml(d.tipo)} — ${App.escapeHtml(d.fechaDerivacion)}${d.folioExterno ? ` — Folio: ${App.escapeHtml(d.folioExterno)}` : ""}</div>
-                          ${d.notas ? `<div class="text-slate-400 italic">${App.escapeHtml(d.notas)}</div>` : ""}
+                          ${d.oculto ? '<div class="text-amber-700 italic"><i class="fa-solid fa-lock"></i> Notas confidenciales — acceso restringido</div>' : d.notas ? `<div class="text-slate-400 italic">${App.escapeHtml(d.notas)}</div>` : ""}
                           <div class="flex items-center justify-between mt-1 no-print">
                               ${adjuntosBtn}
-                              <label class="text-xs text-slate-500 hover:underline cursor-pointer">
-                                  Adjuntar archivo(s)
-                                  <input type="file" multiple class="hidden" onchange="Casos.subirAdjuntosDerivacion(event, ${caso.id}, ${d.id})">
-                              </label>
+                              <div class="flex items-center gap-2">
+                                  <a href="${Api.API_BASE}/casos/${caso.id}/derivaciones/${d.id}/pdf" target="_blank" class="text-xs text-indigo-700 hover:underline" title="Generar Oficio de Derivación en PDF"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+                                  <label class="text-xs text-slate-500 hover:underline cursor-pointer">
+                                      Adjuntar archivo(s)
+                                      <input type="file" multiple class="hidden" onchange="Casos.subirAdjuntosDerivacion(event, ${caso.id}, ${d.id})">
+                                  </label>
+                              </div>
                           </div>
                           <div id="der-adjuntos-list-${d.id}" class="hidden mt-1 text-xs space-y-1 no-print"></div>
                       </div>`;
@@ -282,6 +288,7 @@ const Casos = (() => {
             fechaDerivacion: document.getElementById("der-fecha").value,
             folioExterno: document.getElementById("der-folio").value || null,
             notas: document.getElementById("der-notas").value || null,
+            confidencial: document.getElementById("der-confidencial").checked,
         };
         try {
             await Api.apiFetch(`/casos/${App.estado.casoSeleccionadoId}/derivaciones`, {
@@ -346,7 +353,21 @@ const Casos = (() => {
         document.getElementById("in-fecha").value = new Date().toISOString().split("T")[0];
         chipsEstudiantesAdicionales = [];
         renderChipsEstudiantesAdicionales();
+        // Modo rápido por defecto: solo los campos esenciales quedan visibles
+        // para poder registrar un incidente en pocos segundos desde el celular.
+        document.getElementById("campos-avanzados-apertura").classList.add("hidden");
+        document.getElementById("btn-toggle-campos-avanzados-apertura").innerHTML =
+            '<i class="fa-solid fa-plus me-1"></i>Mostrar más campos (otros estudiantes, curso, JUNAEB, NEE)';
         new bootstrap.Modal(document.getElementById("modalApertura")).show();
+    }
+
+    function toggleCamposAvanzadosApertura() {
+        const contenedor = document.getElementById("campos-avanzados-apertura");
+        const visible = !contenedor.classList.contains("hidden");
+        contenedor.classList.toggle("hidden", visible);
+        document.getElementById("btn-toggle-campos-avanzados-apertura").innerHTML = visible
+            ? '<i class="fa-solid fa-plus me-1"></i>Mostrar más campos (otros estudiantes, curso, JUNAEB, NEE)'
+            : '<i class="fa-solid fa-minus me-1"></i>Ocultar campos avanzados';
     }
 
     function renderChipsEstudiantesAdicionales() {
@@ -381,8 +402,10 @@ const Casos = (() => {
 
     async function guardarNuevoCaso(e) {
         e.preventDefault();
+        const nombreEstudiante = document.getElementById("in-estudiante").value;
         const payload = {
-            estudiante: document.getElementById("in-estudiante").value,
+            estudiante: nombreEstudiante,
+            estudianteId: Estudiantes.idPorNombre(nombreEstudiante),
             estudiantesAdicionales: chipsEstudiantesAdicionales,
             fechaApertura: document.getElementById("in-fecha").value,
             categoria: document.getElementById("in-categoria").value,
@@ -451,6 +474,7 @@ const Casos = (() => {
         subirAdjuntosDerivacion,
         generarCitacionApoderado,
         openModalApertura,
+        toggleCamposAvanzadosApertura,
         agregarChipEstudianteAdicional,
         quitarChipEstudianteAdicional,
         agregarEstudianteAdicionalDetalle,

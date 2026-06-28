@@ -87,6 +87,11 @@ const Auth = (() => {
             }
         );
 
+        // Sumarios (Ley Karin) es confidencial: solo admin/superadmin (y solo
+        // estando dentro de un colegio) ven el ítem de navegación.
+        const puedeVerSumarios = enColegio && (usuario.rol === "admin" || esSuperadmin);
+        document.getElementById("btn-nav-sumarios").classList.toggle("hidden", !puedeVerSumarios);
+
         const puedeGestionarEquipo = usuario.rol === "admin" || (esSuperadmin && enColegio);
 
         const formContenedor = document.getElementById("form-contenedor-equipo");

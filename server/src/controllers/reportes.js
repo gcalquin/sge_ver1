@@ -9,9 +9,30 @@ function aCsv(filas, columnas) {
 }
 
 async function calcularReporte(colegioId) {
+    // Columnas ampliadas para que el reporte sirva como plantilla exportable
+    // hacia la Superintendencia de Educación: vía de resolución, medida aplicada,
+    // reincidencia y días hasta cierre, todas derivables de tablas ya existentes
+    // sin esquema nuevo. No es el formato literal exacto de la Superintendencia
+    // (no hay un spec oficial verificado contra el cual validarlo): es una
+    // plantilla ajustable que el colegio puede adaptar antes de presentarla.
     const { rows: casos } = await pool.query(
-        `SELECT folio, categoria, estado, fecha_apertura AS "fechaApertura", fecha_cierre AS "fechaCierre", dias_activo AS "diasActivo"
-         FROM v_casos WHERE colegio_id = $1`,
+        `SELECT c.folio, c.categoria, c.estado, c.fecha_apertura AS "fechaApertura", c.fecha_cierre AS "fechaCierre",
+                (CASE WHEN c.estado = 'Cerrado' THEN (c.fecha_cierre - c.fecha_apertura) ELSE (CURRENT_DATE - c.fecha_apertura) END) AS "diasActivo",
+                (CASE WHEN c.estado = 'Cerrado' THEN (c.fecha_cierre - c.fecha_apertura) ELSE NULL END) AS "diasHastaCierre",
+                (CASE
+                    WHEN EXISTS (SELECT 1 FROM mediaciones m WHERE m.caso_id = c.id) THEN 'Mediación'
+                    WHEN EXISTS (SELECT 1 FROM derivaciones d WHERE d.caso_id = c.id) THEN 'Derivación Externa'
+                    ELSE 'Gestión Interna'
+                 END) AS "viaResolucion",
+                (SELECT b.contenido FROM bitacora b WHERE b.caso_id = c.id AND b.tipo = 'Medida'
+                 ORDER BY b.id DESC LIMIT 1) AS "medidaAplicada",
+                EXISTS (
+                    SELECT 1 FROM casos c2
+                    WHERE c2.colegio_id = c.colegio_id AND c2.id != c.id AND c2.estado = 'Cerrado'
+                      AND lower(inmutable_unaccent(c2.estudiante)) = lower(inmutable_unaccent(c.estudiante))
+                      AND c2.fecha_cierre < c.fecha_apertura
+                ) AS "reincidencia"
+         FROM casos c WHERE c.colegio_id = $1 AND c.ambito = 'Estudiantil'`,
         [colegioId]
     );
     const { rows: bitacoraCount } = await pool.query(
@@ -58,7 +79,18 @@ const superintendencia = asyncHandler(async (req, res) => {
 
 const superintendenciaCsv = asyncHandler(async (req, res) => {
     const { casos } = await calcularReporte(req.colegioId);
-    const csv = aCsv(casos, ["folio", "categoria", "estado", "fechaApertura", "fechaCierre", "diasActivo"]);
+    const csv = aCsv(casos, [
+        "folio",
+        "categoria",
+        "estado",
+        "fechaApertura",
+        "fechaCierre",
+        "diasActivo",
+        "diasHastaCierre",
+        "viaResolucion",
+        "medidaAplicada",
+        "reincidencia",
+    ]);
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", "attachment; filename=reporte_superintendencia.csv");
     res.send(csv);

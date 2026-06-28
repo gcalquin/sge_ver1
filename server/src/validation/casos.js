@@ -12,6 +12,7 @@ const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida, us
 
 const crearCasoSchema = z.object({
     estudiante: z.string().min(2),
+    estudianteId: z.coerce.number().int().positive().optional().nullable(),
     estudiantesAdicionales: z.array(z.string().min(2).max(150)).max(20).optional().default([]),
     fechaApertura: fechaSchema,
     categoria: z.enum(CATEGORIAS),
@@ -25,10 +26,12 @@ const crearCasoSchema = z.object({
 
 const estudianteAdicionalSchema = z.object({
     nombre: z.string().min(2).max(150),
+    estudianteId: z.coerce.number().int().positive().optional().nullable(),
 });
 
 const actualizarCasoSchema = z.object({
     estudiante: z.string().min(2).optional(),
+    estudianteId: z.coerce.number().int().positive().optional().nullable(),
     categoria: z.enum(CATEGORIAS).optional(),
     descripcion: z.string().min(5).optional(),
     responsableId: z.coerce.number().int().positive().optional(),
@@ -64,12 +67,14 @@ const derivacionSchema = z.object({
     fechaDerivacion: fechaSchema,
     folioExterno: z.string().max(60).optional().nullable(),
     notas: z.string().optional().nullable(),
+    confidencial: z.boolean().optional(),
 });
 
 const actualizarDerivacionSchema = z.object({
     estado: z.enum(ESTADOS_DERIVACION).optional(),
     folioExterno: z.string().max(60).optional().nullable(),
     notas: z.string().optional().nullable(),
+    confidencial: z.boolean().optional(),
 });
 
 const compromisoMediacionSchema = z.object({

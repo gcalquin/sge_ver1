@@ -4,7 +4,17 @@ const CATEGORIAS = [
     "Asistencia / Deserción",
     "Salud Mental / Emocional",
     "Vulneración de Derechos",
+    "Aula Segura",
 ];
+
+// Categoría reservada para sumarios a funcionarios (Ley Karin). No aparece en
+// CATEGORIAS porque nunca debe ofrecerse en el selector público de /casos: solo
+// la usa internamente controllers/sumarios.js.
+const CATEGORIA_SUMARIO = "Sumario Interno (Ley Karin)";
+
+// Categorías que, conforme al Art. 175 letra e) del Código Procesal Penal,
+// obligan a denunciar a Carabineros/PDI/Fiscalía/Tribunal de Familia.
+const CATEGORIAS_CON_DENUNCIA_OBLIGATORIA = ["Vulneración de Derechos", "Aula Segura"];
 
 const ESTADOS = ["Abierto", "En seguimiento", "Cerrado"];
 
@@ -30,6 +40,7 @@ const INSTITUCIONES_DERIVACION = [
     "Mejor Niñez (ex-SENAME)",
     "COSAM",
     "Hospital / Centro de Salud",
+    "GES / Programa de Salud Mental Escolar",
     "Otro",
 ];
 
@@ -39,6 +50,8 @@ const ESTADOS_DERIVACION = ["Pendiente", "Realizada", "Con Respuesta", "Cerrada"
 
 module.exports = {
     CATEGORIAS,
+    CATEGORIA_SUMARIO,
+    CATEGORIAS_CON_DENUNCIA_OBLIGATORIA,
     ESTADOS,
     TIPOS_BITACORA,
     MOTIVOS_CIERRE,

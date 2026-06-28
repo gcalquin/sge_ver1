@@ -254,6 +254,7 @@
                     <li><a href="#equipo-agregar">8.1 Agregar un integrante</a></li>
                     <li><a href="#equipo-capacitaciones">8.2 Capacitaciones del equipo</a></li>
                     <li><a href="#equipo-profesores">8.3 Profesores jefe por curso</a></li>
+                    <li><a href="#equipo-estudiantes">8.4 Catálogo de estudiantes (opcional)</a></li>
                 </ul>
             </li>
             <li><a href="#convivencia">9. Convivencia Escolar</a>
@@ -261,6 +262,7 @@
                     <li><a href="#convivencia-actividades">9.1 Actividades de convivencia</a></li>
                     <li><a href="#convivencia-medidas">9.2 Catálogo de medidas reparatorias</a></li>
                     <li><a href="#convivencia-protocolos">9.3 Protocolos personalizados</a></li>
+                    <li><a href="#convivencia-comite">9.4 Comité de Buena Convivencia Escolar y Plan de Gestión Anual</a></li>
                 </ul>
             </li>
             <li><a href="#configuracion">10. Configuración del colegio</a>
@@ -275,12 +277,14 @@
                 <ul>
                     <li><a href="#central-colegios">11.1 Crear y editar colegios</a></li>
                     <li><a href="#central-sostenedores">11.2 Sostenedores</a></li>
+                    <li><a href="#central-dashboard-sostenedor">11.3 Dashboard consolidado de un sostenedor</a></li>
                 </ul>
             </li>
-            <li><a href="#errores">12. Errores comunes y cómo solucionarlos</a></li>
-            <li><a href="#buenas-practicas">13. Buenas prácticas de uso</a></li>
-            <li><a href="#faq">14. Preguntas frecuentes</a></li>
-            <li><a href="#glosario">15. Glosario de términos</a></li>
+            <li><a href="#sumarios">12. Sumarios a funcionarios (Ley Karin)</a></li>
+            <li><a href="#errores">13. Errores comunes y cómo solucionarlos</a></li>
+            <li><a href="#buenas-practicas">14. Buenas prácticas de uso</a></li>
+            <li><a href="#faq">15. Preguntas frecuentes</a></li>
+            <li><a href="#glosario">16. Glosario de términos</a></li>
         </ul>
     </nav>
 
@@ -372,9 +376,13 @@
             <li>Revise el panel <strong>Cruce con Metas del PME</strong>, que compara los indicadores actuales del colegio con las metas definidas en Configuración.</li>
             <li>Use los botones <strong>Enviar Resumen por Email</strong>, <strong>Reporte Superintendencia (CSV)</strong> y <strong>Export Anónimo (CSV)</strong> para compartir esta información hacia afuera del sistema.</li>
         </ol>
+        <div class="nota">
+            <span class="titulo-nota">Sobre el Reporte Superintendencia</span>
+            El CSV incluye, además de las columnas básicas, la vía de resolución de cada caso (mediación, derivación externa o gestión interna), la medida aplicada, si hubo reincidencia y los días hasta el cierre. Es una <strong>plantilla exportable</strong> que el colegio puede ajustar antes de presentarla: no reemplaza el formulario oficial que la Superintendencia pueda exigir en un proceso específico.
+        </div>
         <div class="ejemplo">
             <span class="titulo-ejemplo">Ejemplo</span>
-            Antes de una visita de la Superintendencia de Educación, el encargado de convivencia descarga el "Reporte Superintendencia (CSV)" para entregar la información en el formato que la autoridad exige.
+            Antes de una visita de la Superintendencia de Educación, el encargado de convivencia descarga el "Reporte Superintendencia (CSV)" como base para preparar la información que se va a presentar.
         </div>
 
         <h3 id="dashboard-carga">5.3 Carga de trabajo y reincidencia</h3>
@@ -392,21 +400,24 @@
         <h2 id="casos">6. Gestión de Casos<a class="volver" href="#indice">↑ volver al índice</a></h2>
 
         <h3 id="casos-crear">6.1 Crear un nuevo caso</h3>
+        <p>El formulario de apertura abre en <strong>modo rápido</strong>: solo pide los datos esenciales, para poder registrar un incidente en pocos segundos incluso desde el celular. Los campos menos urgentes quedan colapsados detrás de "+ Mostrar más campos".</p>
         <ol>
             <li>Presione el botón <strong>Nuevo Caso</strong> ubicado en la parte superior de la pantalla.</li>
-            <li>Complete el nombre del <strong>Estudiante Principal</strong>, es decir, el estudiante a cuyo nombre queda el expediente (folio, PDF, notificaciones).</li>
+            <li>Complete el nombre del <strong>Estudiante Principal</strong>, es decir, el estudiante a cuyo nombre queda el expediente (folio, PDF, notificaciones). Si el colegio mantiene el catálogo de estudiantes (ver sección 8.4), el sistema sugiere nombres ya registrados mientras escribe.</li>
             <li>Seleccione la fecha de apertura del caso.</li>
-            <li>Si la situación involucra a más de un estudiante (por ejemplo, una pelea o un conflicto entre varios alumnos), escriba el nombre de cada uno en el campo <strong>Otros estudiantes involucrados</strong> y presione <strong>Agregar</strong> (o Enter) para añadirlo como chip; puede agregar tantos como necesite y quitarlos con la "x" antes de guardar.</li>
-            <li>Seleccione la categoría que mejor describe la situación: Convivencia Escolar, Académico / Rendimiento, Asistencia / Deserción, Salud Mental / Emocional o Vulneración de Derechos.</li>
+            <li>Seleccione la categoría que mejor describe la situación: Convivencia Escolar, Académico / Rendimiento, Asistencia / Deserción, Salud Mental / Emocional, Vulneración de Derechos o <strong>Aula Segura</strong> (para hechos de violencia física grave que ameritan el procedimiento especial de la Ley 21.128).</li>
             <li>Seleccione el profesional responsable principal del caso.</li>
-            <li>Indique el curso del estudiante, si corresponde.</li>
-            <li>Si el estudiante cuenta con necesidades educativas especiales, marque la casilla <strong>Estudiante con NEE</strong> y describa el diagnóstico, recordando que esta información es confidencial.</li>
             <li>Escriba una descripción inicial clara de la situación.</li>
+            <li>Si necesita registrar otros estudiantes involucrados, el curso, beneficios JUNAEB o el diagnóstico PIE de un estudiante con NEE, presione <strong>+ Mostrar más campos</strong> para desplegarlos.</li>
             <li>Presione el botón <strong>Aperturar</strong> para guardar el caso.</li>
         </ol>
         <div class="ejemplo">
             <span class="titulo-ejemplo">Ejemplo</span>
-            Ante una situación de agresión verbal entre compañeros de 7° básico, se crea un caso de categoría "Convivencia Escolar" con el primer estudiante como Principal y se agrega al segundo en "Otros estudiantes involucrados", de modo que ambos quedan vinculados al mismo expediente en vez de abrir un caso por cada uno. El sistema busca y detecta reincidencia considerando a todos los estudiantes del caso, no solo al principal. Una vez creado el caso, también se pueden agregar o quitar estudiantes adicionales desde el expediente.
+            Ante una situación de agresión verbal entre compañeros de 7° básico, se crea un caso de categoría "Convivencia Escolar" con el primer estudiante como Principal y, desplegando los campos avanzados, se agrega al segundo en "Otros estudiantes involucrados", de modo que ambos quedan vinculados al mismo expediente en vez de abrir un caso por cada uno. El sistema busca y detecta reincidencia considerando a todos los estudiantes del caso, no solo al principal. Una vez creado el caso, también se pueden agregar o quitar estudiantes adicionales desde el expediente.
+        </div>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Un inspector es testigo de una agresión física grave entre dos estudiantes en el patio. Abre "Nuevo Caso", completa solo los campos del modo rápido con categoría "Aula Segura" y guarda en menos de un minuto. El sistema aplica automáticamente el protocolo de Aula Segura, con sus plazos de resguardo, notificación a la familia y comunicación a la Superintendencia.
         </div>
 
         <h3 id="casos-filtrar">6.2 Consultar y filtrar el listado</h3>
@@ -492,16 +503,22 @@
             <li>Seleccione la institución y el tipo de derivación, indicando si corresponde a una denuncia obligatoria o a una derivación de apoyo.</li>
             <li>Ingrese la fecha de la derivación y, si lo tiene, el número de folio entregado por la institución.</li>
             <li>Agregue notas adicionales si lo considera necesario.</li>
+            <li>Si la derivación corresponde a salud mental (por ejemplo, a GES / Programa de Salud Mental Escolar) y contiene información sensible, marque la casilla <strong>Marcar como confidencial</strong>: sus notas y folio externo quedarán ocultos para cualquier usuario que no sea administrador, superadministrador o Psicólogo PIE.</li>
             <li>Presione <strong>Registrar Derivación</strong>.</li>
             <li>Una vez registrada, puede presionar <strong>Adjuntar archivo(s)</strong> para subir uno o más documentos (oficio recibido, comprobante de denuncia, correo de respuesta, etc.) que queden como <strong>medio de verificación</strong> de esa derivación.</li>
+            <li>Presione el ícono <strong>PDF</strong> junto a la derivación para generar un "Oficio de Derivación": una plantilla interna prellenada con los datos del caso y de la derivación, pensada para imprimir y adjuntar al notificar a la institución externa.</li>
         </ol>
         <div class="advertencia">
             <span class="titulo-advertencia">Importante</span>
-            Si un caso corresponde a una posible vulneración de derechos y aún no se ha registrado una denuncia obligatoria, el sistema mostrará un aviso destacado recordando esta obligación legal hasta que la derivación quede registrada.
+            Si un caso corresponde a una posible vulneración de derechos (o a un caso de Aula Segura) y aún no se ha registrado una denuncia obligatoria, el sistema mostrará un aviso destacado recordando esta obligación legal hasta que la derivación quede registrada.
         </div>
         <div class="ejemplo">
             <span class="titulo-ejemplo">Ejemplo</span>
-            Un caso de vulneración de derechos requiere ser denunciado a Carabineros. El equipo realiza la denuncia presencialmente, obtiene el número de parte policial, lo ingresa en "Derivaciones Externas" seleccionando "Carabineros" y "Denuncia obligatoria", y además adjunta una foto o escaneo del comprobante de denuncia como medio de verificación. El aviso pendiente desaparece automáticamente.
+            Un caso de vulneración de derechos requiere ser denunciado a Carabineros. El equipo realiza la denuncia presencialmente, obtiene el número de parte policial, lo ingresa en "Derivaciones Externas" seleccionando "Carabineros" y "Denuncia obligatoria", genera el oficio de derivación en PDF y además adjunta una foto o escaneo del comprobante de denuncia como medio de verificación. El aviso pendiente desaparece automáticamente.
+        </div>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Un estudiante es derivado al Programa de Salud Mental Escolar (GES). El profesional registra la derivación marcando la casilla "Confidencial": un funcionario sin permisos especiales verá que existe una derivación, pero no podrá leer las notas clínicas ni el folio externo; solo el administrador y el Psicólogo PIE pueden verlas completas.
         </div>
 
         <h3 id="expediente-cierre">7.5 Cerrar el caso</h3>
@@ -561,6 +578,19 @@
         <div class="ejemplo">
             <span class="titulo-ejemplo">Ejemplo</span>
             Al asignar a la profesora Marcela como profesora jefe de "5° Básico B", cualquier caso nuevo que se abra para un estudiante de ese curso la notificará automáticamente, incluso si ella no es la responsable principal del caso.
+        </div>
+
+        <h3 id="equipo-estudiantes">8.4 Catálogo de estudiantes (opcional)</h3>
+        <p>Este catálogo es completamente opcional. Su único propósito es ayudar a escribir más rápido y sin errores de tipeo: el sistema sigue funcionando igual de bien escribiendo el nombre del estudiante directamente en cada caso, con o sin catálogo.</p>
+        <ol>
+            <li>En la sección <strong>Estudiantes — catálogo opcional</strong>, ingrese el nombre del estudiante y, si lo desea, su curso.</li>
+            <li>Presione <strong>Agregar</strong>.</li>
+            <li>Una vez agregado, el nombre del estudiante aparecerá como sugerencia automática al escribir en los campos de "Estudiante" de cualquier caso nuevo, sin que esto sea obligatorio de usar.</li>
+            <li>Puede <strong>desactivar</strong> un estudiante del catálogo (por ejemplo, si egresó) sin perder el historial de los casos que ya tenía vinculados.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            El colegio carga al catálogo los nombres y cursos de todo 8° básico al inicio del año. Desde entonces, al abrir un caso nuevo para uno de esos estudiantes, basta con escribir las primeras letras de su nombre para que aparezca como sugerencia, evitando que dos funcionarios distintos escriban su nombre de forma distinta en dos casos diferentes.
         </div>
 
         <!-- ============ 9. CONVIVENCIA ============ -->
@@ -629,6 +659,20 @@
         <div class="ejemplo">
             <span class="titulo-ejemplo">Ejemplo</span>
             El colegio decide que, para los casos de Convivencia Escolar, el primer paso del protocolo debe completarse en 3 días en lugar de los 5 días del protocolo global, debido a un acuerdo interno con el Consejo Escolar. El administrador personaliza ese paso, y todos los casos nuevos de esa categoría aplicarán el nuevo plazo.
+        </div>
+
+        <h3 id="convivencia-comite">9.4 Comité de Buena Convivencia Escolar y Plan de Gestión Anual</h3>
+        <p>Esta sección registra las actas de las reuniones del Comité de Buena Convivencia Escolar (o Consejo Escolar) y permite generar el Plan de Gestión de Convivencia Escolar anual exigido por la normativa, consolidando en un solo documento lo que el sistema ya gestiona durante el año.</p>
+        <ol>
+            <li>En el panel <strong>Comité de Buena Convivencia Escolar</strong>, presione <strong>Nueva Acta</strong>.</li>
+            <li>Ingrese la fecha de la reunión, los asistentes, los temas tratados y los acuerdos alcanzados.</li>
+            <li>Presione <strong>Registrar Acta</strong>.</li>
+            <li>Presione el ícono <strong>PDF</strong> junto a un acta para generar su respaldo individual.</li>
+            <li>En el panel <strong>Plan de Gestión Anual</strong>, seleccione el año y presione <strong>Generar PDF</strong>: el documento incluye las actas del comité, las actividades de convivencia realizadas, los protocolos de actuación vigentes y las estadísticas de casos por categoría de ese año.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            En marzo, el comité se reúne para revisar los resultados del año anterior y definir prioridades. La encargada de convivencia registra el acta de esa reunión y, al cierre del año, genera el Plan de Gestión Anual en PDF para presentarlo al sostenedor, sin tener que armarlo a mano en un documento aparte.
         </div>
 
         <!-- ============ 10. CONFIGURACIÓN ============ -->
@@ -712,8 +756,36 @@
             Una corporación municipal administra cuatro colegios de la misma comuna. Se registra una sola vez como sostenedor, y luego se asocia a cada uno de los cuatro colegios al crearlos o editarlos.
         </div>
 
-        <!-- ============ 12. ERRORES ============ -->
-        <h2 id="errores">12. Errores comunes y cómo solucionarlos<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <h3 id="central-dashboard-sostenedor">11.3 Dashboard consolidado de un sostenedor</h3>
+        <p>Si una corporación o fundación administra varios colegios, puede revisar de un vistazo el estado de todos ellos sin tener que entrar uno por uno.</p>
+        <ol>
+            <li>En la lista de <strong>Sostenedores</strong>, presione <strong>Ver Dashboard</strong> junto al sostenedor que desea revisar.</li>
+            <li>Se muestra un gráfico con la cantidad de casos abiertos por colegio, y una tabla con el total de casos, casos abiertos, casos cerrados, alertas críticas activas y próximos vencimientos de cada colegio.</li>
+            <li>Presione <strong>Entrar</strong> en la fila de un colegio para ingresar a su contexto y revisar el detalle.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Una fundación que administra tres colegios revisa el dashboard consolidado y nota que uno de ellos tiene cinco alertas críticas activas, mientras los otros dos no tienen ninguna. Entra directamente a ese colegio para revisar qué casos están sin movimiento.
+        </div>
+
+        <!-- ============ 12. SUMARIOS (LEY KARIN) ============ -->
+        <h2 id="sumarios">12. Sumarios a funcionarios (Ley Karin)<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <p>Esta sección permite documentar investigaciones internas a funcionarios del establecimiento conforme a la <strong>Ley Karin</strong> (Ley 21.643), que regula el acoso laboral, el acoso sexual y la violencia en el trabajo. Es <strong>estrictamente confidencial</strong>: solo los usuarios con rol Administrador o Superadministrador pueden ver el ítem "Sumarios" en el menú lateral, crear sumarios o consultarlos. Un funcionario regular o un invitado no pueden verlos bajo ninguna circunstancia, ni siquiera intentando acceder directamente a la dirección de un sumario.</p>
+        <ol>
+            <li>Ingrese a <strong>Sumarios</strong> en el menú lateral (solo visible para administradores).</li>
+            <li>Presione <strong>Nuevo Sumario</strong>.</li>
+            <li>Ingrese el nombre del funcionario involucrado, la fecha de apertura, el responsable de la investigación (debe ser un administrador) y una descripción inicial de los hechos.</li>
+            <li>Presione <strong>Crear Sumario</strong>. El sistema aplica automáticamente el protocolo de investigación interna conforme a la Ley Karin, con sus plazos legales (recepción de la denuncia, medidas de resguardo, investigación, remisión a la Inspección del Trabajo y resolución).</li>
+            <li>Dentro del detalle del sumario, puede marcar cada paso del protocolo como completado y agregar entradas a la <strong>bitácora cronológica</strong> de la investigación (entrevistas, hallazgos, medidas, resolución).</li>
+            <li>Presione <strong>PDF</strong> para generar un respaldo del sumario, con la misma trazabilidad y formato que un expediente de caso estudiantil.</li>
+        </ol>
+        <div class="ejemplo">
+            <span class="titulo-ejemplo">Ejemplo</span>
+            Se recibe una denuncia interna de acoso laboral contra un inspector. El administrador crea un sumario, registra las entrevistas realizadas en la bitácora a medida que avanza la investigación, marca los pasos del protocolo conforme se cumplen los plazos, y genera el PDF de respaldo una vez resuelto el caso. Ningún funcionario regular del colegio puede ver este sumario en ningún listado ni reporte.
+        </div>
+
+        <!-- ============ 13. ERRORES ============ -->
+        <h2 id="errores">13. Errores comunes y cómo solucionarlos<a class="volver" href="#indice">↑ volver al índice</a></h2>
         <table>
             <tr><th>Situación</th><th>Cómo solucionarlo</th></tr>
             <tr>
@@ -750,8 +822,8 @@
             </tr>
         </table>
 
-        <!-- ============ 13. BUENAS PRÁCTICAS ============ -->
-        <h2 id="buenas-practicas">13. Buenas prácticas de uso<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <!-- ============ 14. BUENAS PRÁCTICAS ============ -->
+        <h2 id="buenas-practicas">14. Buenas prácticas de uso<a class="volver" href="#indice">↑ volver al índice</a></h2>
         <ul>
             <li>Utilice una contraseña personal y no la comparta con otros funcionarios.</li>
             <li>Cierre siempre su sesión cuando termine de utilizar el sistema, especialmente si trabaja en un computador compartido.</li>
@@ -765,8 +837,8 @@
             <li>Pase el cursor sobre los íconos de ayuda (tooltips) cuando no esté seguro del propósito de un campo o botón, antes de modificarlo.</li>
         </ul>
 
-        <!-- ============ 14. FAQ ============ -->
-        <h2 id="faq">14. Preguntas frecuentes<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <!-- ============ 15. FAQ ============ -->
+        <h2 id="faq">15. Preguntas frecuentes<a class="volver" href="#indice">↑ volver al índice</a></h2>
 
         <h3>Olvidé mi contraseña, qué debo hacer</h3>
         <p>Debe contactar al administrador de su colegio o al administrador general del sistema, quien podrá restablecer sus credenciales de acceso.</p>
@@ -798,14 +870,17 @@
         <h3>Puedo personalizar el protocolo de actuación de mi colegio</h3>
         <p>Sí, un administrador puede personalizar los pasos y plazos del protocolo para cualquier categoría desde la sección Convivencia. Si no se personaliza, se utiliza automáticamente el protocolo global del sistema.</p>
 
-        <!-- ============ 15. GLOSARIO ============ -->
-        <h2 id="glosario">15. Glosario de términos<a class="volver" href="#indice">↑ volver al índice</a></h2>
+        <h3>Quién puede ver los sumarios a funcionarios (Ley Karin)</h3>
+        <p>Solo los usuarios con rol Administrador o Superadministrador. El ítem "Sumarios" ni siquiera aparece en el menú para un Funcionario o un Invitado, y tampoco pueden acceder a un sumario escribiendo su dirección directamente: el sistema lo trata como inexistente para cualquier rol sin autorización.</p>
+
+        <!-- ============ 16. GLOSARIO ============ -->
+        <h2 id="glosario">16. Glosario de términos<a class="volver" href="#indice">↑ volver al índice</a></h2>
         <table>
             <tr><th>Término</th><th>Significado</th></tr>
             <tr><td><strong>Caso</strong></td><td>Expediente que documenta una situación particular de un estudiante y todo su proceso de seguimiento hasta su cierre.</td></tr>
             <tr><td><strong>Folio</strong></td><td>Número único que identifica a cada caso dentro de un colegio.</td></tr>
             <tr><td><strong>Bitácora</strong></td><td>Registro cronológico de todas las acciones realizadas dentro de un caso, como entrevistas, seguimientos, medidas y cierres.</td></tr>
-            <tr><td><strong>Categoría</strong></td><td>Clasificación de un caso según el tipo de situación: Convivencia Escolar, Académico, Asistencia, Salud Mental o Vulneración de Derechos.</td></tr>
+            <tr><td><strong>Categoría</strong></td><td>Clasificación de un caso según el tipo de situación: Convivencia Escolar, Académico, Asistencia, Salud Mental, Vulneración de Derechos o Aula Segura.</td></tr>
             <tr><td><strong>Estado</strong></td><td>Situación actual de un caso: Abierto, En Seguimiento o Cerrado.</td></tr>
             <tr><td><strong>Responsable principal</strong></td><td>Profesional encargado de gestionar y dar seguimiento a un caso específico.</td></tr>
             <tr><td><strong>Colegio</strong></td><td>Establecimiento educacional registrado dentro del sistema, con su propio equipo y sus propios casos.</td></tr>
@@ -827,6 +902,14 @@
             <tr><td><strong>Plan de Mejoramiento Educativo (PME)</strong></td><td>Instrumento de planificación del establecimiento cuyas metas pueden compararse con los indicadores que entrega el sistema.</td></tr>
             <tr><td><strong>Auditoría</strong></td><td>Registro histórico de acciones administrativas relevantes realizadas dentro del sistema, visible solo para administradores.</td></tr>
             <tr><td><strong>Tooltip</strong></td><td>Pequeño mensaje de ayuda que aparece al dejar el mouse sobre un campo, botón o título, explicando su propósito.</td></tr>
+            <tr><td><strong>Aula Segura</strong></td><td>Categoría de caso para hechos de violencia física grave, conforme a la Ley 21.128, que habilita un procedimiento especial con plazos breves (resguardo, expulsión/cancelación de matrícula, apelación, comunicación a la Superintendencia).</td></tr>
+            <tr><td><strong>Ley Karin</strong></td><td>Ley 21.643, que regula el acoso laboral, el acoso sexual y la violencia en el trabajo. En el sistema da origen a los "Sumarios" — investigaciones internas a funcionarios, estrictamente confidenciales.</td></tr>
+            <tr><td><strong>Sumario</strong></td><td>Investigación interna a un funcionario del colegio (Ley Karin), visible solo para administradores y superadministradores.</td></tr>
+            <tr><td><strong>Información confidencial</strong></td><td>Datos sensibles (diagnóstico PIE, derivaciones de salud mental marcadas como confidenciales, sumarios a funcionarios) cuyo acceso está restringido a roles específicos (Administrador, Superadministrador, Psicólogo PIE), independientemente de quién pueda ver el resto del caso.</td></tr>
+            <tr><td><strong>Catálogo de estudiantes</strong></td><td>Lista opcional de estudiantes del colegio que alimenta el autocompletado al escribir un nombre en un caso. No reemplaza el texto libre ni es obligatorio mantenerlo actualizado.</td></tr>
+            <tr><td><strong>Comité de Buena Convivencia Escolar</strong></td><td>Instancia colegiada (también llamada Consejo Escolar en algunos establecimientos) cuyas reuniones se registran como actas con compromisos de seguimiento.</td></tr>
+            <tr><td><strong>Plan de Gestión de Convivencia Escolar</strong></td><td>Documento anual que resume la gestión de convivencia del colegio (actas del comité, actividades, protocolos vigentes, estadísticas de casos), generado automáticamente en PDF.</td></tr>
+            <tr><td><strong>Oficio de Derivación</strong></td><td>Plantilla interna en PDF con los datos de una derivación externa, pensada como respaldo propio del colegio; no reemplaza el formulario oficial que pueda exigir la institución destinataria.</td></tr>
         </table>
 
         <footer class="pie">

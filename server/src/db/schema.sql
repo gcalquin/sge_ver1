@@ -584,3 +584,156 @@ ON CONFLICT (colegio_id, nombre) DO NOTHING;
 
 -- Meses para considerar "reincidencia" tras el cierre de un caso (mejora 17).
 ALTER TABLE colegios ADD COLUMN IF NOT EXISTS meses_alerta_reincidencia INTEGER NOT NULL DEFAULT 6;
+
+-- ===================== categoria: de ENUM a texto libre =====================
+-- "categoria" vivía como un ENUM nativo de Postgres (categoria_caso). Agregar un
+-- valor a un ENUM existente con ALTER TYPE ... ADD VALUE no se puede usar en la
+-- misma transacción en la que también se inserta una fila que use ese valor nuevo,
+-- y este script siempre corre completo en una sola transacción (ver migrations/).
+-- Para no pelear con esa restricción cada vez que se agregue una categoría futura,
+-- se convierte a VARCHAR: la validación real de qué categorías son válidas ya vive
+-- en Zod (CATEGORIAS, validation/constants.js), el ENUM era solo defensa en
+-- profundidad redundante. El tipo categoria_caso queda sin usar (no se elimina,
+-- es inofensivo dejarlo).
+-- La vista v_casos depende de casos.categoria (regla _RETURN), así que Postgres
+-- no deja alterar el tipo de la columna mientras la vista exista. Se elimina y
+-- se vuelve a crear más abajo (CREATE OR REPLACE VIEW v_casos), una vez que
+-- también existen las columnas nuevas casos.ambito/casos.estudiante_id.
+DROP VIEW IF EXISTS v_casos;
+
+ALTER TABLE casos ALTER COLUMN categoria TYPE VARCHAR(60) USING categoria::text;
+ALTER TABLE protocolos ALTER COLUMN categoria TYPE VARCHAR(60) USING categoria::text;
+ALTER TABLE protocolos_colegio ALTER COLUMN categoria TYPE VARCHAR(60) USING categoria::text;
+
+-- ===================== ámbito del caso (estudiantil vs. sumario a funcionario) =====================
+-- Permite reutilizar todo el motor de "casos" (bitácora con hash-chain, protocolo,
+-- derivaciones, PDF de expediente) para sumarios internos a funcionarios (Ley Karin),
+-- que requieren confidencialidad reforzada: solo admin/superadmin pueden verlos
+-- (ver controllers/sumarios.js). Todas las filas existentes quedan 'Estudiantil'.
+DO $$ BEGIN
+    CREATE TYPE ambito_caso AS ENUM ('Estudiantil', 'Funcionario');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+ALTER TABLE casos ADD COLUMN IF NOT EXISTS ambito ambito_caso NOT NULL DEFAULT 'Estudiantil';
+CREATE INDEX IF NOT EXISTS idx_casos_ambito ON casos(ambito);
+
+-- Protocolos de "Aula Segura" (Ley 21.128) y de sumario interno (Ley Karin, Ley
+-- 21.643) reutilizan el mismo catálogo de protocolos que las categorías
+-- estudiantiles: son, técnicamente, una categoría más con su propio checklist de
+-- pasos y plazos (personalizables por colegio igual que las demás).
+INSERT INTO protocolos (categoria, nombre, normativa, pasos) VALUES
+('Aula Segura', 'Protocolo Aula Segura',
+ 'Ley 21.128 Aula Segura (modifica la Ley General de Educación N.º 20.370)',
+ '[
+   {"orden":1,"descripcion":"Constatación de los hechos y resguardo inmediato de los afectados (separación del aula si corresponde).","plazoDias":1},
+   {"orden":2,"descripcion":"Inicio del procedimiento de expulsión o cancelación de matrícula por el Director, con notificación escrita a la familia.","plazoDias":3},
+   {"orden":3,"descripcion":"Comunicación a la Superintendencia de Educación de la medida adoptada.","plazoDias":1},
+   {"orden":4,"descripcion":"Plazo para que el apoderado apele ante el Director/Consejo Escolar conforme al Reglamento Interno.","plazoDias":15},
+   {"orden":5,"descripcion":"Resolución final, registro en el expediente y derivación a Carabineros/Fiscalía si corresponde por delito.","plazoDias":20}
+ ]'::jsonb),
+('Sumario Interno (Ley Karin)', 'Protocolo de Investigación Interna — Ley Karin',
+ 'Ley 21.643 (modifica el Código del Trabajo en materia de acoso laboral, sexual y violencia en el trabajo)',
+ '[
+   {"orden":1,"descripcion":"Recepción formal de la denuncia y apertura de la investigación interna.","plazoDias":2},
+   {"orden":2,"descripcion":"Adopción de medidas de resguardo (separación de espacios, redistribución de jornada, etc.).","plazoDias":3},
+   {"orden":3,"descripcion":"Investigación interna: recopilación de antecedentes y entrevistas a las partes.","plazoDias":30},
+   {"orden":4,"descripcion":"Remisión del informe de investigación a la Inspección del Trabajo.","plazoDias":2},
+   {"orden":5,"descripcion":"Adopción de medidas/sanciones según conclusiones y notificación a las partes.","plazoDias":15}
+ ]'::jsonb)
+ON CONFLICT (categoria) DO NOTHING;
+
+-- ===================== actas del Comité de Buena Convivencia Escolar =====================
+-- Mismo patrón que "mediaciones"/"mediacion_compromisos": un acta con compromisos
+-- de seguimiento, salvo que esta vive a nivel de colegio (no de un caso puntual).
+CREATE TABLE IF NOT EXISTS actas_comite_convivencia (
+    id              SERIAL PRIMARY KEY,
+    colegio_id      INTEGER NOT NULL REFERENCES colegios(id) ON DELETE CASCADE,
+    fecha_reunion   DATE NOT NULL,
+    asistentes      TEXT NOT NULL,
+    temas_tratados  TEXT NOT NULL,
+    acuerdos        TEXT NOT NULL,
+    creado_por      INTEGER NOT NULL REFERENCES usuarios(id),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_actas_comite_colegio ON actas_comite_convivencia(colegio_id);
+
+CREATE TABLE IF NOT EXISTS acta_comite_compromisos (
+    id              SERIAL PRIMARY KEY,
+    acta_id         INTEGER NOT NULL REFERENCES actas_comite_convivencia(id) ON DELETE CASCADE,
+    descripcion     TEXT NOT NULL,
+    responsable     VARCHAR(150),
+    fecha_limite    DATE,
+    cumplido        BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_cumplido  DATE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_acta_comite_compromisos_acta ON acta_comite_compromisos(acta_id);
+
+-- Ahora que "actas_comite_convivencia" ya existe, se puede agregar la columna de
+-- adjuntos que la referencia.
+ALTER TABLE adjuntos ADD COLUMN IF NOT EXISTS acta_comite_id INTEGER REFERENCES actas_comite_convivencia(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_adjuntos_acta_comite ON adjuntos(acta_comite_id);
+
+-- ===================== catálogo opcional de estudiantes =====================
+-- Aditivo: "casos.estudiante" y "caso_estudiantes_adicionales.nombre" siguen siendo
+-- texto libre (cero riesgo de romper búsqueda/reincidencia/PDF ya existentes). Este
+-- catálogo solo habilita autocompletado y, si el colegio lo usa, un vínculo opcional
+-- vía estudiante_id para reducir errores de tipeo en colegios que quieran mantenerlo.
+CREATE TABLE IF NOT EXISTS estudiantes (
+    id          SERIAL PRIMARY KEY,
+    colegio_id  INTEGER NOT NULL REFERENCES colegios(id) ON DELETE CASCADE,
+    nombre      VARCHAR(150) NOT NULL,
+    curso       VARCHAR(20),
+    rut         VARCHAR(20),
+    activo      BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_estudiantes_colegio ON estudiantes(colegio_id);
+CREATE INDEX IF NOT EXISTS idx_estudiantes_fts
+    ON estudiantes USING GIN (to_tsvector('spanish', inmutable_unaccent(nombre)));
+
+ALTER TABLE casos ADD COLUMN IF NOT EXISTS estudiante_id INTEGER REFERENCES estudiantes(id) ON DELETE SET NULL;
+ALTER TABLE caso_estudiantes_adicionales ADD COLUMN IF NOT EXISTS estudiante_id INTEGER REFERENCES estudiantes(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_casos_estudiante_id ON casos(estudiante_id);
+CREATE INDEX IF NOT EXISTS idx_caso_estudiantes_adicionales_estudiante_id ON caso_estudiantes_adicionales(estudiante_id);
+
+-- ===================== confidencialidad reforzada en derivaciones =====================
+-- Para derivaciones de salud mental (GES, COSAM, equipos psicosociales): cuando es
+-- TRUE, notas/folio_externo se ocultan en pantalla a quien no sea admin/superadmin
+-- ni Psicólogo PIE, igual que ya ocurre con el diagnóstico PIE (ver getCasoDetalle).
+ALTER TABLE derivaciones ADD COLUMN IF NOT EXISTS confidencial BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- "v_casos" se redefine aquí (no donde se creó originalmente) porque recién en
+-- este punto del script existen las columnas casos.ambito y casos.estudiante_id.
+CREATE OR REPLACE VIEW v_casos AS
+SELECT
+    c.id,
+    c.colegio_id,
+    c.folio,
+    c.estudiante,
+    c.fecha_apertura,
+    c.categoria,
+    c.descripcion,
+    c.estado,
+    c.fecha_cierre,
+    c.motivo_cierre,
+    c.responsable_id,
+    u.nombre AS responsable_nombre,
+    u.rol_institucional AS responsable_rol,
+    CASE
+        WHEN c.estado = 'Cerrado' THEN (c.fecha_cierre - c.fecha_apertura)
+        ELSE (CURRENT_DATE - c.fecha_apertura)
+    END AS dias_activo,
+    c.created_at,
+    c.updated_at,
+    c.curso,
+    c.tiene_nee,
+    c.diagnostico_pie,
+    c.beneficios_junaeb,
+    c.ambito,
+    c.estudiante_id
+FROM casos c
+JOIN usuarios u ON u.id = c.responsable_id;

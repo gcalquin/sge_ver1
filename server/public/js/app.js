@@ -59,10 +59,21 @@ const App = (() => {
     }
 
     function switchView(viewName) {
-        ["central", "dashboard", "casos", "equipo", "convivencia", "config", "detalle"].forEach((v) => {
+        [
+            "central",
+            "dashboard",
+            "casos",
+            "equipo",
+            "convivencia",
+            "config",
+            "detalle",
+            "dashboard-sostenedor",
+            "sumarios",
+            "detalle-sumario",
+        ].forEach((v) => {
             document.getElementById(`view-${v}`).classList.add("hidden");
         });
-        ["central", "dashboard", "casos", "equipo", "convivencia", "config"].forEach((v) => {
+        ["central", "dashboard", "casos", "equipo", "convivencia", "config", "sumarios"].forEach((v) => {
             const btn = document.getElementById(`btn-nav-${v}`);
             if (btn) btn.classList.remove("active");
         });
@@ -90,6 +101,7 @@ const App = (() => {
             document.getElementById("page-title").innerText = "Configuración de Personal";
             Equipo.renderTablaEquipo();
             Equipo.renderProfesoresJefe();
+            Estudiantes.renderCatalogo();
         } else if (viewName === "convivencia") {
             document.getElementById("view-convivencia").classList.remove("hidden");
             document.getElementById("btn-nav-convivencia").classList.add("active");
@@ -103,6 +115,17 @@ const App = (() => {
         } else if (viewName === "detalle") {
             document.getElementById("view-detalle").classList.remove("hidden");
             document.getElementById("page-title").innerText = "Expediente Técnico";
+        } else if (viewName === "dashboard-sostenedor") {
+            document.getElementById("view-dashboard-sostenedor").classList.remove("hidden");
+            document.getElementById("page-title").innerText = "Dashboard Consolidado del Sostenedor";
+        } else if (viewName === "sumarios") {
+            document.getElementById("view-sumarios").classList.remove("hidden");
+            document.getElementById("btn-nav-sumarios").classList.add("active");
+            document.getElementById("page-title").innerText = "Sumarios a Funcionarios (Ley Karin)";
+            Sumarios.renderLista();
+        } else if (viewName === "detalle-sumario") {
+            document.getElementById("view-detalle-sumario").classList.remove("hidden");
+            document.getElementById("page-title").innerText = "Sumario Interno";
         }
     }
 

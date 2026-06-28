@@ -14,13 +14,17 @@ const APP_SHELL = [
     "/js/auth.js",
     "/js/colegios.js",
     "/js/dashboard.js",
+    "/js/dashboardSostenedor.js",
+    "/js/estudiantes.js",
     "/js/casos.js",
     "/js/bitacora.js",
     "/js/mediaciones.js",
     "/js/capacitaciones.js",
+    "/js/comiteConvivencia.js",
     "/js/convivencia.js",
     "/js/equipo.js",
     "/js/config.js",
+    "/js/sumarios.js",
     "/js/offline.js",
 ];
 
